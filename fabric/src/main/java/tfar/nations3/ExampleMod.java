@@ -1,4 +1,4 @@
-package com.example.examplemod;
+package tfar.nations3;
 
 import net.fabricmc.api.ModInitializer;
 
@@ -12,7 +12,7 @@ public class ExampleMod implements ModInitializer {
         // project.
 
         // Use Fabric to bootstrap the Common mod.
-        CommonClass.LOG.info("Hello Fabric world!");
-        CommonClass.init();
+        Nations3.LOG.info("Hello Fabric world!");
+        Nations3.init();
     }
 }

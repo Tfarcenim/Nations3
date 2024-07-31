@@ -8,7 +8,6 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.MapItem;
 import tfar.nations3.init.ModBlocks;
 import tfar.nations3.init.ModMenuTypes;
 
@@ -44,7 +43,6 @@ public class ClaimingTableMenu extends AbstractContainerMenu {
         for(i = 0; i < 9; ++i) {
             this.addSlot(new Slot(inventory, i, 8 + i * 18, 142 + startY));
         }
-
     }
 
     @Override

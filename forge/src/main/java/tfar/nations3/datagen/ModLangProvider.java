@@ -1,6 +1,9 @@
 package tfar.nations3.datagen;
 
 import net.minecraft.data.PackOutput;
+import net.minecraft.network.chat.ComponentContents;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.enchantment.Enchantment;
@@ -8,6 +11,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraftforge.common.data.LanguageProvider;
 import org.codehaus.plexus.util.StringUtils;
 import tfar.nations3.Nations3;
+import tfar.nations3.block.ClaimingTableBlock;
 
 import java.util.function.Supplier;
 
@@ -18,6 +22,7 @@ public class ModLangProvider extends LanguageProvider {
 
     @Override
     protected void addTranslations() {
+        addTranslatableComponent(ClaimingTableBlock.CONTAINER_TITLE,"Claiming Table");
     }
 
 
@@ -53,4 +58,12 @@ public class ModLangProvider extends LanguageProvider {
         return StringUtils.capitaliseAllWords(entity.getDescriptionId().split("\\.")[2].replace("_", " "));
     }
 
+    protected void addTranslatableComponent(MutableComponent component, String text) {
+        ComponentContents contents = component.getContents();
+        if (contents instanceof TranslatableContents translatableContents) {
+            add(translatableContents.getKey(),text);
+        } else {
+            throw new UnsupportedOperationException(component +" is not translatable");
+        }
+    }
 }

@@ -9,4 +9,6 @@ public class ModClient {
         MenuScreens.register(ModMenuTypes.CLAIMING_TABLE,ClaimingTableScreen::new);
     }
 
+
+
 }

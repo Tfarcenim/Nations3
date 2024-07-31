@@ -2,6 +2,7 @@ package tfar.nations3.block;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.stats.Stats;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -19,7 +20,7 @@ public class ClaimingTableBlock extends Block {
     public ClaimingTableBlock(Properties $$0) {
         super($$0);
     }
-    private static final Component CONTAINER_TITLE = Component.translatable("container.crafting");
+    public static final MutableComponent CONTAINER_TITLE = Component.translatable("container.nations3.claiming_table");
 
     public InteractionResult use(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit) {
         if (pLevel.isClientSide) {

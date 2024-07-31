@@ -6,6 +6,8 @@ import net.minecraftforge.network.NetworkEvent;
 import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.simple.SimpleChannel;
 import tfar.nations3.Nations3;
+import tfar.nations3.network.server.C2SModPacket;
+import tfar.nations3.network.client.S2CModPacket;
 
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;

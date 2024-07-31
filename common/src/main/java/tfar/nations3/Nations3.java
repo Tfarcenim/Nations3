@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import tfar.nations3.init.ModBlocks;
 import tfar.nations3.init.ModItems;
 import tfar.nations3.init.ModMenuTypes;
+import tfar.nations3.network.PacketHandler;
 import tfar.nations3.platform.Services;
 
 import java.util.stream.Stream;
@@ -33,6 +34,7 @@ public class Nations3 {
         Services.PLATFORM.registerAll(ModBlocks.class, BuiltInRegistries.BLOCK, Block.class);
         Services.PLATFORM.registerAll(ModItems.class, BuiltInRegistries.ITEM, Item.class);
         Services.PLATFORM.registerAll(ModMenuTypes.class, BuiltInRegistries.MENU, menuTypeClass);
+        PacketHandler.registerPackets();
     }
 
     public static ResourceLocation id(String path) {

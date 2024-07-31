@@ -1,4 +1,4 @@
-package tfar.nations3.network;
+package tfar.nations3.network.client;
 
 import net.minecraft.network.FriendlyByteBuf;
 import tfar.nations3.client.ClientPacketHandler;

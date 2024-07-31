@@ -5,6 +5,7 @@ import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.saveddata.SavedData;
 import org.jetbrains.annotations.Nullable;
 import tfar.nations3.Nations3;
@@ -23,12 +24,45 @@ public class TownData extends SavedData {
 
     public Town createTown(UUID owner,String name) {
         if (towns_by_name.get(name) != null) {
-            Nations3.LOG.warn("A town named {} already exists!", name);
             return null;
         }
         Town town = new Town(this,owner,name);
+        towns.add(town);
+        towns_by_name.put(town.getName(),town);
         return town;
     }
+
+    public void destroyTown(Town town) {
+        if (town != null) {
+            towns.remove(town);
+            towns_by_name.remove(town.getName());
+            setDirty();
+        }
+    }
+
+    @Nullable
+    public Town getOwnerOf(ChunkPos pos) {
+        for (Town town : towns) {
+            if (town.hasClaim(pos)) {
+                return town;
+            }
+        }
+        return null;
+    }
+
+    @Nullable
+    public Town getTownByPlayer(UUID uuid) {
+        for (Town town : towns) {
+            if (town.containsPlayer(uuid))return town;
+        }
+        return null;
+    }
+
+    @Nullable
+    public Town getTownByName(String name) {
+        return towns_by_name.get(name);
+    }
+
 
     @Nullable
     public static TownData getInstance(ServerLevel serverLevel) {

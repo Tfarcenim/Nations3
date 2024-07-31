@@ -5,9 +5,13 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
 import tfar.nations3.Nations3;
 import tfar.nations3.menu.ClaimingTableMenu;
+import tfar.nations3.network.server.C2SClaimChunk;
+import tfar.nations3.platform.Services;
+import tfar.nations3.world.ClaimDisplay;
 
 import javax.annotation.Nullable;
 
@@ -15,10 +19,17 @@ public class ClaimingTableScreen extends AbstractContainerScreen<ClaimingTableMe
 
     protected static final ResourceLocation BACKGROUND = Nations3.id("textures/gui/claiming_table.png");
 
+    protected final int gridOffsetX;
+    protected final int gridOffsetY;
+    protected final int gridSize;
+
     public ClaimingTableScreen(ClaimingTableMenu $$0, Inventory $$1, Component $$2) {
         super($$0, $$1, $$2);
         imageHeight +=78;
         inventoryLabelY += 78;
+        gridOffsetX = 15;
+        gridOffsetY = 18;
+        gridSize = 14;
     }
 
     @Override
@@ -37,16 +48,49 @@ public class ClaimingTableScreen extends AbstractContainerScreen<ClaimingTableMe
 
         //this.renderResultingMap($$0, 0, mapItemSavedData);
         renderGrid(pGuiGraphics);
+        renderClaimed(pGuiGraphics);
     }
 
     private void renderGrid(GuiGraphics pGuiGraphics) {
-        int yStart = topPos + 18;
-        int xStart = leftPos +15;
-        int size = 14;
-        int length = size * 9;
+        int xStart = leftPos + gridOffsetX;
+        int yStart = topPos + gridOffsetY;
+        int length = gridSize * 9;
         for (int i = 0; i < 10;i++) {
-            pGuiGraphics.hLine(xStart,xStart + length,yStart + i * size,0xffffffff);
-            pGuiGraphics.vLine(xStart + i * size,yStart,yStart + length,0xffffffff);
+            pGuiGraphics.hLine(xStart,xStart + length,yStart + i * gridSize,0xffffffff);
+            pGuiGraphics.vLine(xStart + i * gridSize,yStart,yStart + length,0xffffffff);
+        }
+    }
+
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (clickedGrid(mouseX, mouseY, leftPos+gridOffsetX, topPos + gridOffsetY, button)) {
+            int x = (int) (( mouseX-(leftPos+gridOffsetX)) / gridSize) ;
+            int z = (int) (( mouseY-(topPos+gridOffsetY)) / gridSize) ;
+            int index = x + 9 * z;
+            if (menu.containerData.get(index) != ClaimDisplay.Type.OWNED_BY_OTHER.ordinal()) {
+                Services.PLATFORM.sendToServer(new C2SClaimChunk(x-4, z-4,menu.containerData.get(index)!= ClaimDisplay.Type.WILDERNESS.ordinal()));
+            }
+            return true;
+        } else {
+            return super.mouseClicked(mouseX, mouseY, button);
+        }
+    }
+
+    protected boolean clickedGrid(double pMouseX, double pMouseY, int pGuiLeft, int pGuiTop, int pMouseButton) {
+        return pMouseX > pGuiLeft && pMouseY > pGuiTop && pMouseX < (pGuiLeft + gridSize * 9) && pMouseY < (pGuiTop + gridSize * 9);
+    }
+
+    private void renderClaimed(GuiGraphics graphics) {
+        ContainerData containerData = menu.containerData;
+        for (int z = 0; z < 9;z++) {
+            for (int x = 0; x < 9;x++) {
+                int ordinal = containerData.get(x + 9 * z);
+                if (ordinal > 0) {
+                    graphics.fill(leftPos+gridOffsetX +x * gridSize + 1,topPos+gridOffsetY + z * gridSize + 1,
+                            leftPos+gridOffsetX + x * gridSize + gridSize,topPos+gridOffsetY + z * gridSize + gridSize,
+                            0xff00ff00);//(int pMinX, int pMinY, int pMaxX, int pMaxY, int pColor)
+                }
+            }
         }
     }
 
@@ -66,6 +110,5 @@ public class ClaimingTableScreen extends AbstractContainerScreen<ClaimingTableMe
             $$0.flush();
             $$0.pose().popPose();
         }
-
     }
 }

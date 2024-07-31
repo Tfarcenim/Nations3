@@ -3,8 +3,8 @@ package tfar.nations3.platform.services;
 import net.minecraft.core.Registry;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
-import tfar.nations3.network.C2SModPacket;
-import tfar.nations3.network.S2CModPacket;
+import tfar.nations3.network.server.C2SModPacket;
+import tfar.nations3.network.client.S2CModPacket;
 import tfar.nations3.platform.MLConfig;
 
 import java.lang.reflect.Field;

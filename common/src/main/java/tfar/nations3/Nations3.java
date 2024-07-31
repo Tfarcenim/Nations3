@@ -49,6 +49,4 @@ public class Nations3 {
     public static <V> Stream<V> getKnown(Registry<V> registry) {
         return registry.stream().filter(o -> registry.getKey(o).getNamespace().equals(MOD_ID));
     }
-
-
 }

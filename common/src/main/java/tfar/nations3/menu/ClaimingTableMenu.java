@@ -4,10 +4,8 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerLevelAccess;
-import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.block.Blocks;
-import org.jetbrains.annotations.Nullable;
+import tfar.nations3.init.ModBlocks;
 import tfar.nations3.init.ModMenuTypes;
 
 public class ClaimingTableMenu extends AbstractContainerMenu {
@@ -30,6 +28,6 @@ public class ClaimingTableMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        return stillValid(this.access, player, Blocks.CRAFTING_TABLE);
+        return stillValid(this.access, player, ModBlocks.CLAIMING_TABLE);
     }
 }

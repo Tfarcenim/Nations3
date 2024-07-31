@@ -1,5 +1,6 @@
 package tfar.nations3;
 
+import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.inventory.MenuType;
@@ -11,6 +12,8 @@ import tfar.nations3.init.ModBlocks;
 import tfar.nations3.init.ModItems;
 import tfar.nations3.init.ModMenuTypes;
 import tfar.nations3.platform.Services;
+
+import java.util.stream.Stream;
 
 // This class is part of the common project meaning it is shared between all supported loaders. Code written here can only
 // import and access the vanilla codebase, libraries used by vanilla, and optionally third party libraries that provide
@@ -35,5 +38,17 @@ public class Nations3 {
     public static ResourceLocation id(String path) {
         return new ResourceLocation(MOD_ID,path);
     }
+
+    public static Stream<Block> getKnownBlocks() {
+        return getKnown(BuiltInRegistries.BLOCK);
+    }
+    public static Stream<Item> getKnownItems() {
+        return getKnown(BuiltInRegistries.ITEM);
+    }
+
+    public static <V> Stream<V> getKnown(Registry<V> registry) {
+        return registry.stream().filter(o -> registry.getKey(o).getNamespace().equals(MOD_ID));
+    }
+
 
 }

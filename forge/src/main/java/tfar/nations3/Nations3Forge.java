@@ -14,6 +14,8 @@ import net.minecraftforge.registries.RegisterEvent;
 import org.apache.commons.lang3.tuple.Pair;
 import tfar.nations3.client.ModClient;
 import tfar.nations3.client.ModClientForge;
+import tfar.nations3.datagen.ModDatagen;
+import tfar.nations3.datagen.ModLangProvider;
 
 import java.util.HashMap;
 import java.util.List;
@@ -30,6 +32,7 @@ public class Nations3Forge {
         IEventBus bus = FMLJavaModLoadingContext.get().getModEventBus();
         bus.addListener(this::onInitialize);
         bus.addListener(this::registerObjs);
+        bus.addListener(ModDatagen::gather);
         if (FMLEnvironment.dist.isClient()) {
             ModClientForge.init(bus);
         }

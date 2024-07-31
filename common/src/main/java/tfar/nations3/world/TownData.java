@@ -1,16 +1,15 @@
 package tfar.nations3.world;
 
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.saveddata.SavedData;
 import org.jetbrains.annotations.Nullable;
 import tfar.nations3.Nations3;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class TownData extends SavedData {
 
@@ -22,12 +21,20 @@ public class TownData extends SavedData {
         this.level = level;
     }
 
+    public Town createTown(UUID owner,String name) {
+        if (towns_by_name.get(name) != null) {
+            Nations3.LOG.warn("A town named {} already exists!", name);
+            return null;
+        }
+        Town town = new Town(this,owner,name);
+        return town;
+    }
+
     @Nullable
     public static TownData getInstance(ServerLevel serverLevel) {
         return serverLevel.getDataStorage()
                 .get(compoundTag -> loadStatic(compoundTag, serverLevel), name(serverLevel));
     }
-
 
     public static TownData getOrCreateInstance(ServerLevel serverLevel) {
         return serverLevel.getDataStorage()
@@ -48,15 +55,28 @@ public class TownData extends SavedData {
         id.load(compoundTag,level);
         return id;
     }
-    
 
     @Override
     public CompoundTag save(CompoundTag compoundTag) {
+        ListTag listTag = new ListTag();
+        for (Town town : towns) {
+            listTag.add(town.save());
+        }
+        compoundTag.put("towns",listTag);
         return compoundTag;
     }
 
     public void load(CompoundTag tag,ServerLevel level) {
-
+        ListTag townsTag = tag.getList("towns", ListTag.TAG_COMPOUND);
+        for (Tag tag1 : townsTag) {
+            loadTown((CompoundTag) tag1);
+        }
     }
 
+    protected void loadTown(CompoundTag tag) {
+        Town town = new Town(this);
+        town.load(tag);
+        towns.add(town);
+        towns_by_name.put(town.getName(),town);
+    }
 }

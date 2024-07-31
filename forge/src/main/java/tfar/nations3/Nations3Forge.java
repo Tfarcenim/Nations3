@@ -3,6 +3,8 @@ package tfar.nations3;
 import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
@@ -12,10 +14,8 @@ import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.registries.RegisterEvent;
 import org.apache.commons.lang3.tuple.Pair;
-import tfar.nations3.client.ModClient;
 import tfar.nations3.client.ModClientForge;
 import tfar.nations3.datagen.ModDatagen;
-import tfar.nations3.datagen.ModLangProvider;
 
 import java.util.HashMap;
 import java.util.List;
@@ -33,6 +33,7 @@ public class Nations3Forge {
         bus.addListener(this::onInitialize);
         bus.addListener(this::registerObjs);
         bus.addListener(ModDatagen::gather);
+        MinecraftForge.EVENT_BUS.addListener(this::commands);
         if (FMLEnvironment.dist.isClient()) {
             ModClientForge.init(bus);
         }
@@ -56,6 +57,10 @@ public class Nations3Forge {
 
     public void onInitialize(FMLCommonSetupEvent e) {
         registerLater.clear();
+    }
+
+    public void commands(RegisterCommandsEvent event) {
+        ModCommands.register(event.getDispatcher());
     }
 
 }

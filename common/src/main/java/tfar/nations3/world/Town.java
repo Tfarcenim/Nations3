@@ -16,6 +16,7 @@ public class Town {
     private UUID owner;
     private String name;
     private Set<ChunkPos> claimed = new HashSet<>();
+    private long money;
 
     public Town(TownData townData) {
         this.townData = townData;
@@ -63,7 +64,7 @@ public class Town {
     public CompoundTag save() {
         CompoundTag tag = new CompoundTag();
         tag.putUUID("owner", owner);
-        tag.putString(name,"name");
+        tag.putString("name",name);
         ListTag claimedTag = new ListTag();
         for (ChunkPos chunkPos : claimed) {
             CompoundTag chunkPosTag = new CompoundTag();

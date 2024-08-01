@@ -44,6 +44,7 @@ public class ModCommands {
             return 0;
         }
         townData.createTown(player.getUUID(),name);
+        commandSourceStack.sendSuccess(() -> Component.literal("Created town with name "+name),false);
         return 1;
     }
 
@@ -53,6 +54,7 @@ public class ModCommands {
         TownData townData = TownData.getOrCreateInstance(player.serverLevel());
         Town town = townData.getTownByPlayer(player.getUUID());
         if (town!= null) {
+            commandSourceStack.sendSuccess(() -> Component.literal("Successfully destroyed own town"),false);
             townData.destroyTown(town);
             return 1;
         } else {

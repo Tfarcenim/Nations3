@@ -7,7 +7,7 @@ import net.minecraft.world.level.ChunkPos;
 import java.util.Objects;
 import java.util.UUID;
 
-public class ClaimDisplay implements ContainerData {
+public class ClaimDisplay implements TownInfos {
 
     public enum Type {
         WILDERNESS,OWNED,OWNED_BY_OTHER;
@@ -24,14 +24,13 @@ public class ClaimDisplay implements ContainerData {
     }
 
     @Override
-    public int get(int index) {
+    public TownInfo get(int index) {
         ChunkPos pos = convert(index);
-        Type type = getType(pos);
-        return type.ordinal();
+        return getInfo(pos);
     }
 
     @Override
-    public void set(int index, int value) {
+    public void set(int index, TownInfo value) {
         throw new UnsupportedOperationException();//will never be needed
     }
 
@@ -53,13 +52,12 @@ public class ClaimDisplay implements ContainerData {
         return pos;
     }
 
-    public Type getType(ChunkPos pos) {
+    public static final TownInfo WILDERNESS = new TownInfo("",Relations.NEUTRAL,false);
+
+    public TownInfo getInfo(ChunkPos pos) {
         Town town = townData.getOwnerOf(pos);
-        if (town == null) return Type.WILDERNESS;
-        UUID owner = town.getOwner();
-        if (Objects.equals(player.getUUID(),owner)) return Type.OWNED;
-        return Type.OWNED_BY_OTHER;
+
+        if (town == null) return WILDERNESS;
+        return new TownInfo(town.getName(),Relations.NEUTRAL,false);
     }
-
-
 }

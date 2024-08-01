@@ -3,6 +3,7 @@ package tfar.nations3.network.server;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.ChunkPos;
+import tfar.nations3.menu.ClaimingTableMenu;
 import tfar.nations3.world.Town;
 import tfar.nations3.world.TownData;
 
@@ -31,12 +32,15 @@ public class C2SClaimChunk implements C2SModPacket {
         TownData townData = TownData.getInstance(player.serverLevel());
         if (townData != null) {
             Town town = townData.getTownByPlayer(player.getUUID());
-            if (town != null) {
+            if (town != null && town.containsPlayer(player.getUUID())) {
                 if (remove) {
                     town.unClaim(chunkPos);
                 } else {
                     town.claim(chunkPos);
                 }
+            }
+            if (player.containerMenu instanceof ClaimingTableMenu claimingTableMenu) {
+
             }
         }
     }

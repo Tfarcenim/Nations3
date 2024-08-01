@@ -1,25 +1,40 @@
 package tfar.nations3.menu;
 
+import com.google.common.collect.Lists;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.*;
 import net.minecraft.world.item.ItemStack;
 import tfar.nations3.init.ModBlocks;
 import tfar.nations3.init.ModMenuTypes;
+import tfar.nations3.network.client.S2CTownInfoPacket;
+import tfar.nations3.platform.Services;
+import tfar.nations3.world.*;
+
+import java.util.List;
+import java.util.Objects;
 
 public class ClaimingTableMenu extends AbstractContainerMenu {
 
     private final ContainerLevelAccess access;
-    public final ContainerData containerData;
+
+    public final TownInfos townInfos;
+
+    private final List<TownInfosSlot> townInfoSlots = Lists.newArrayList();
+
+    private final List<TownInfo> remoteTownInfoSlots = Lists.newArrayList();
+    private final Player player;
 
     public ClaimingTableMenu(int id, Inventory inventory) {
-        this(id,inventory,ContainerLevelAccess.NULL,new SimpleContainerData(81));
+        this(id,inventory,ContainerLevelAccess.NULL,new ClientTownInfos(81));
     }
 
-    public ClaimingTableMenu(int id, Inventory inventory, ContainerLevelAccess access, ContainerData containerData) {
+    public ClaimingTableMenu(int id, Inventory inventory, ContainerLevelAccess access,TownInfos townInfos) {
         super(ModMenuTypes.CLAIMING_TABLE, id);
         this.access = access;
-        this.containerData = containerData;
+        this.townInfos = townInfos;
+        this.player = inventory.player;
 
         /*addSlot(new Slot(container,0,0,0){
             @Override
@@ -40,7 +55,46 @@ public class ClaimingTableMenu extends AbstractContainerMenu {
         for(i = 0; i < 9; ++i) {
             this.addSlot(new Slot(inventory, i, 8 + i * 18, 142 + startY));
         }
-        addDataSlots(containerData);
+        addTownInfos(townInfos);
+    }
+
+    protected void addTownInfos(TownInfos pArray) {
+        for(int i = 0; i < pArray.getCount(); ++i) {
+            this.addTownInfoSlot(TownInfosSlot.forContainer(pArray, i));
+        }
+    }
+
+    protected TownInfosSlot addTownInfoSlot(TownInfosSlot pIntValue) {
+        this.townInfoSlots.add(pIntValue);
+        this.remoteTownInfoSlots.add(null);
+        return pIntValue;
+    }
+
+    @Override
+    public void broadcastChanges() {
+        super.broadcastChanges();
+
+        for(int slot = 0; slot < this.townInfoSlots.size(); ++slot) {
+            TownInfosSlot $$4 = this.townInfoSlots.get(slot);
+            TownInfo townInfo = $$4.get();
+            if ($$4.checkAndClearUpdateFlag()) {
+                this.synchronizeTownInfoSlotToRemote(slot, townInfo);
+            }
+
+            this.synchronizeTownInfoSlotToRemote(slot, townInfo);
+        }
+    }
+
+    private void synchronizeTownInfoSlotToRemote(int slot, TownInfo townInfo) {
+        TownInfo $$2 = this.remoteTownInfoSlots.get(slot);
+            if (!Objects.equals($$2,townInfo)) {
+                this.remoteTownInfoSlots.set(slot, townInfo);
+                broadcastTownInfoValue(slot,townInfo);
+            }
+    }
+
+    private void broadcastTownInfoValue(int slot, TownInfo townInfo) {
+        Services.PLATFORM.sendToClient(new S2CTownInfoPacket(containerId, slot, townInfo), (ServerPlayer) player);
     }
 
     @Override
@@ -51,5 +105,9 @@ public class ClaimingTableMenu extends AbstractContainerMenu {
     @Override
     public boolean stillValid(Player player) {
         return stillValid(this.access, player, ModBlocks.CLAIMING_TABLE);
+    }
+
+    public void setTownInfo(int index, TownInfo value) {
+        this.townInfoSlots.get(index).set(value);
     }
 }

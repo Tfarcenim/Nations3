@@ -12,8 +12,11 @@ import tfar.nations3.menu.ClaimingTableMenu;
 import tfar.nations3.network.server.C2SClaimChunk;
 import tfar.nations3.platform.Services;
 import tfar.nations3.world.ClaimDisplay;
+import tfar.nations3.world.TownInfo;
+import tfar.nations3.world.TownInfos;
 
 import javax.annotation.Nullable;
+import java.util.Optional;
 
 public class ClaimingTableScreen extends AbstractContainerScreen<ClaimingTableMenu> {
 
@@ -32,11 +35,34 @@ public class ClaimingTableScreen extends AbstractContainerScreen<ClaimingTableMe
         gridSize = 14;
     }
 
+    //Claiming chunks in claiming table should have green overlay
+    //Neighbouring alliances should be light blue
+    //Neighbouring neutral nations should be yellow maybe
+    //Neighbouring neutral towns some other colour
+
     @Override
     public void render(GuiGraphics $$0, int $$1, int $$2, float $$3) {
         this.renderBackground($$0);
         super.render($$0, $$1, $$2, $$3);
         this.renderTooltip($$0, $$1, $$2);
+    }
+
+    @Override
+    protected void renderTooltip(GuiGraphics $$0, int mouseX, int mouseY) {
+        super.renderTooltip($$0, mouseX, mouseY);
+        if (clickedGrid(mouseX, mouseY, leftPos+gridOffsetX, topPos + gridOffsetY, 0)) {
+            int x = (mouseX-(leftPos+gridOffsetX)) / gridSize;
+            int z = (mouseY-(topPos+gridOffsetY)) / gridSize;
+            int index = x + 9 * z;
+            TownInfo townInfo = menu.townInfos.get(index);
+            if (townInfo != null) {
+                if (townInfo.equals(ClaimDisplay.WILDERNESS)) {
+                    $$0.renderTooltip(this.font, Component.literal("Wilderness"), mouseX, mouseY);
+                } else {
+                    $$0.renderTooltip(this.font, Component.literal(townInfo.name()), mouseX, mouseY);
+                }
+            }
+        }
     }
 
     protected void renderBg(GuiGraphics pGuiGraphics, float pPartialTick, int pMouseX, int pMouseY) {
@@ -67,8 +93,13 @@ public class ClaimingTableScreen extends AbstractContainerScreen<ClaimingTableMe
             int x = (int) (( mouseX-(leftPos+gridOffsetX)) / gridSize) ;
             int z = (int) (( mouseY-(topPos+gridOffsetY)) / gridSize) ;
             int index = x + 9 * z;
-            if (menu.containerData.get(index) != ClaimDisplay.Type.OWNED_BY_OTHER.ordinal()) {
-                Services.PLATFORM.sendToServer(new C2SClaimChunk(x-4, z-4,menu.containerData.get(index)!= ClaimDisplay.Type.WILDERNESS.ordinal()));
+            TownInfo townInfo = menu.townInfos.get(index);
+            if (townInfo != null) {
+                if (townInfo.equals(ClaimDisplay.WILDERNESS)) {
+                    Services.PLATFORM.sendToServer(new C2SClaimChunk(x - 4, z - 4, false));
+                } else {
+                    Services.PLATFORM.sendToServer(new C2SClaimChunk(x - 4, z - 4, true));
+                }
             }
             return true;
         } else {
@@ -81,14 +112,14 @@ public class ClaimingTableScreen extends AbstractContainerScreen<ClaimingTableMe
     }
 
     private void renderClaimed(GuiGraphics graphics) {
-        ContainerData containerData = menu.containerData;
+        TownInfos townInfos = menu.townInfos;
         for (int z = 0; z < 9;z++) {
             for (int x = 0; x < 9;x++) {
-                int ordinal = containerData.get(x + 9 * z);
-                if (ordinal > 0) {
+                TownInfo townInfo = townInfos.get(x + 9 * z);
+                if (townInfo != null) {
                     graphics.fill(leftPos+gridOffsetX +x * gridSize + 1,topPos+gridOffsetY + z * gridSize + 1,
                             leftPos+gridOffsetX + x * gridSize + gridSize,topPos+gridOffsetY + z * gridSize + gridSize,
-                            0xff00ff00);//(int pMinX, int pMinY, int pMaxX, int pMaxY, int pColor)
+                            townInfo.getColor());//(int pMinX, int pMinY, int pMaxX, int pMaxY, int pColor)
                 }
             }
         }

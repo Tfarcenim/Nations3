@@ -45,6 +45,14 @@ public class Town {
         return claimed.contains(pos);
     }
 
+    public long getMoney() {
+        return money;
+    }
+    public void deposit(long amount) {
+        money+=amount;
+        setDirty();
+    }
+
     public boolean claim(ChunkPos pos) {
         boolean add = claimed.add(pos);
         if (add) setDirty();
@@ -57,6 +65,8 @@ public class Town {
         return remove;
     }
 
+
+
     public void setDirty() {
         townData.setDirty();
     }
@@ -65,6 +75,7 @@ public class Town {
         CompoundTag tag = new CompoundTag();
         tag.putUUID("owner", owner);
         tag.putString("name",name);
+        tag.putLong("money",money);
         ListTag claimedTag = new ListTag();
         for (ChunkPos chunkPos : claimed) {
             CompoundTag chunkPosTag = new CompoundTag();
@@ -79,6 +90,7 @@ public class Town {
     public void load(CompoundTag tag) {
         owner = tag.getUUID("owner");
         name = tag.getString("name");
+        money = tag.getLong("money");
         ListTag claimedTag = tag.getList("claimed",Tag.TAG_COMPOUND);
         for (Tag tag1 : claimedTag) {
             CompoundTag compoundTag = (CompoundTag) tag1;

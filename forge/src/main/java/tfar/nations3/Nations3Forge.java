@@ -33,6 +33,7 @@ public class Nations3Forge {
         bus.addListener(this::onInitialize);
         bus.addListener(this::registerObjs);
         bus.addListener(ModDatagen::gather);
+        bus.addListener(TomlConfig::configLoad);
         MinecraftForge.EVENT_BUS.addListener(this::commands);
         if (FMLEnvironment.dist.isClient()) {
             ModClientForge.init(bus);

@@ -10,6 +10,7 @@ public class ModBlockLoot extends VanillaBlockLoot {
     @Override
     protected void generate() {
         dropSelf(ModBlocks.CLAIMING_TABLE);
+        dropSelf(ModBlocks.DEPOSIT_STATION);
     }
 
     @Override

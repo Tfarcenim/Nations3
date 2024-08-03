@@ -1,3 +1,5 @@
 {
-  "container.nations3.claiming_table": "Claiming Table"
+  "block.nations3.claiming_table": "Claiming Table",
+  "block.nations3.deposit_station": "Deposit Station",
+  "itemGroup.nations3": "Nations3"
 }

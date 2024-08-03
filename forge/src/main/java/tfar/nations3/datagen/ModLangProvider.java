@@ -12,6 +12,8 @@ import net.minecraftforge.common.data.LanguageProvider;
 import org.codehaus.plexus.util.StringUtils;
 import tfar.nations3.Nations3;
 import tfar.nations3.block.ClaimingTableBlock;
+import tfar.nations3.init.ModBlocks;
+import tfar.nations3.init.ModCreativeTabs;
 
 import java.util.function.Supplier;
 
@@ -22,7 +24,9 @@ public class ModLangProvider extends LanguageProvider {
 
     @Override
     protected void addTranslations() {
-        addTranslatableComponent(ClaimingTableBlock.CONTAINER_TITLE,"Claiming Table");
+        addTranslatableComponent(ModCreativeTabs.TITLE,"Nations3");
+        addDefaultBlock(() -> ModBlocks.CLAIMING_TABLE);
+        addDefaultBlock(() -> ModBlocks.DEPOSIT_STATION);
     }
 
 

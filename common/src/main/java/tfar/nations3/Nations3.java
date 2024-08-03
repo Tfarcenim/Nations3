@@ -4,11 +4,13 @@ import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.inventory.MenuType;
+import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tfar.nations3.init.ModBlocks;
+import tfar.nations3.init.ModCreativeTabs;
 import tfar.nations3.init.ModItems;
 import tfar.nations3.init.ModMenuTypes;
 import tfar.nations3.network.PacketHandler;
@@ -30,10 +32,10 @@ public class Nations3 {
     // write the majority of your code here and load it from your loader specific projects. This example has some
     // code that gets invoked by the entry point of the loader specific projects.
     public static void init() {
-        Class<MenuType<?>> menuTypeClass = (Class<MenuType<?>>) (Object)MenuType.class;
         Services.PLATFORM.registerAll(ModBlocks.class, BuiltInRegistries.BLOCK, Block.class);
         Services.PLATFORM.registerAll(ModItems.class, BuiltInRegistries.ITEM, Item.class);
-        Services.PLATFORM.registerAll(ModMenuTypes.class, BuiltInRegistries.MENU, menuTypeClass);
+        Services.PLATFORM.registerAll(ModMenuTypes.class, BuiltInRegistries.MENU, (Class<MenuType<?>>) (Object)MenuType.class);
+        Services.PLATFORM.registerAll(ModCreativeTabs.class, BuiltInRegistries.CREATIVE_MODE_TAB, CreativeModeTab.class);
         PacketHandler.registerPackets();
     }
 

@@ -5,18 +5,15 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
 import tfar.nations3.Nations3;
 import tfar.nations3.menu.ClaimingTableMenu;
 import tfar.nations3.network.server.C2SClaimChunk;
 import tfar.nations3.platform.Services;
-import tfar.nations3.world.ClaimDisplay;
 import tfar.nations3.world.TownInfo;
 import tfar.nations3.world.TownInfos;
 
 import javax.annotation.Nullable;
-import java.util.Optional;
 
 public class ClaimingTableScreen extends AbstractContainerScreen<ClaimingTableMenu> {
 
@@ -56,7 +53,7 @@ public class ClaimingTableScreen extends AbstractContainerScreen<ClaimingTableMe
             int index = x + 9 * z;
             TownInfo townInfo = menu.townInfos.get(index);
             if (townInfo != null) {
-                if (townInfo.equals(ClaimDisplay.WILDERNESS)) {
+                if (townInfo.equals(TownInfo.WILDERNESS)) {
                     $$0.renderTooltip(this.font, Component.literal("Wilderness"), mouseX, mouseY);
                 } else {
                     $$0.renderTooltip(this.font, Component.literal(townInfo.name()), mouseX, mouseY);
@@ -95,7 +92,7 @@ public class ClaimingTableScreen extends AbstractContainerScreen<ClaimingTableMe
             int index = x + 9 * z;
             TownInfo townInfo = menu.townInfos.get(index);
             if (townInfo != null) {
-                if (townInfo.equals(ClaimDisplay.WILDERNESS)) {
+                if (townInfo.equals(TownInfo.WILDERNESS)) {
                     Services.PLATFORM.sendToServer(new C2SClaimChunk(x - 4, z - 4, false));
                 } else {
                     Services.PLATFORM.sendToServer(new C2SClaimChunk(x - 4, z - 4, true));
@@ -119,7 +116,7 @@ public class ClaimingTableScreen extends AbstractContainerScreen<ClaimingTableMe
                 if (townInfo != null) {
                     graphics.fill(leftPos+gridOffsetX +x * gridSize + 1,topPos+gridOffsetY + z * gridSize + 1,
                             leftPos+gridOffsetX + x * gridSize + gridSize,topPos+gridOffsetY + z * gridSize + gridSize,
-                            townInfo.getColor());//(int pMinX, int pMinY, int pMaxX, int pMaxY, int pColor)
+                            townInfo.relations().color);//(int pMinX, int pMinY, int pMaxX, int pMaxY, int pColor)
                 }
             }
         }

@@ -34,6 +34,7 @@ minecraft {
             taskName 'Client'
             property 'mixin.env.remapRefMap', 'true'
             property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
+            jvmArg('-Xmx4G')
             mods {
                 modClientRun {
                     source sourceSets.main
@@ -46,7 +47,6 @@ minecraft {
             parent runs.client
             args '--username', 'Dev1'
             workingDirectory project.file('run2')
-            taskName 'Client 2'
         }
 
         server {
@@ -55,6 +55,7 @@ minecraft {
             taskName 'Server'
             property 'mixin.env.remapRefMap', 'true'
             property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
+            jvmArg('-Xmx4G')
             mods {
                 modServerRun {
                     source sourceSets.main

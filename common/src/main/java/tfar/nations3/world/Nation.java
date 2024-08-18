@@ -56,6 +56,7 @@ public class Nation {
     public CompoundTag save() {
         CompoundTag tag = new CompoundTag();
         tag.putUUID("owner", owner);
+        tag.putString("name",name);
         tag.put("towns", saveTowns());
         return tag;
     }

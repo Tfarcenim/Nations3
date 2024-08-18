@@ -6,6 +6,8 @@ import java.util.Objects;
 
 public record TownInfo(String name, Relations relations, boolean isNation) {
 
+    public static final TownInfo WILDERNESS = new TownInfo("wilderness",Relations.WILDERNESS,false);
+
     public void toPacket(FriendlyByteBuf buf) {
         buf.writeUtf(name);
         buf.writeInt(relations.ordinal());
@@ -14,13 +16,6 @@ public record TownInfo(String name, Relations relations, boolean isNation) {
 
     public static TownInfo fromPacket(FriendlyByteBuf buf) {
         return new TownInfo(buf.readUtf(),Relations.values()[buf.readInt()],buf.readBoolean());
-    }
-
-    public int getColor() {
-        if (this.equals(ClaimDisplay.WILDERNESS)) {
-            return 0x00ffffff;
-        }
-        return 0xff00ff00;
     }
 
     @Override

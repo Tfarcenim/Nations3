@@ -1,17 +1,11 @@
 package tfar.nations3.world;
 
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.level.ChunkPos;
 
 import java.util.Objects;
-import java.util.UUID;
 
 public class ClaimDisplay implements TownInfos {
-
-    public enum Type {
-        WILDERNESS,OWNED,OWNED_BY_OTHER;
-    }
 
     private final TownData townData;
     private final Player player;
@@ -52,12 +46,17 @@ public class ClaimDisplay implements TownInfos {
         return pos;
     }
 
-    public static final TownInfo WILDERNESS = new TownInfo("",Relations.NEUTRAL,false);
-
     public TownInfo getInfo(ChunkPos pos) {
-        Town town = townData.getOwnerOf(pos);
+        Town townAtChunk = townData.getOwnerOf(pos);
 
-        if (town == null) return WILDERNESS;
-        return new TownInfo(town.getName(),Relations.NEUTRAL,false);
+        if (townAtChunk == null) return TownInfo.WILDERNESS;
+
+        Town playerTown = townData.getTownByPlayer(player.getUUID());
+
+        if (Objects.equals(townAtChunk,playerTown)) {
+            return new TownInfo(townAtChunk.getName(),Relations.OWN,false);
+        }
+
+        return new TownInfo(townAtChunk.getName(),Relations.NEUTRAL,false);
     }
 }

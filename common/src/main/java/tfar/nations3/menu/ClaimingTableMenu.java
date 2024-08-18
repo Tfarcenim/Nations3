@@ -1,6 +1,7 @@
 package tfar.nations3.menu;
 
 import com.google.common.collect.Lists;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -25,6 +26,8 @@ public class ClaimingTableMenu extends AbstractContainerMenu {
 
     private final List<TownInfo> remoteTownInfoSlots = Lists.newArrayList();
     private final Player player;
+    private final TownData townData;
+    private Town town;
 
     public ClaimingTableMenu(int id, Inventory inventory) {
         this(id,inventory,ContainerLevelAccess.NULL,new ClientTownInfos(81));
@@ -35,6 +38,11 @@ public class ClaimingTableMenu extends AbstractContainerMenu {
         this.access = access;
         this.townInfos = townInfos;
         this.player = inventory.player;
+
+        townData = !player.level().isClientSide ? TownData.getInstance((ServerLevel) player.level()) : null;
+        if (townData != null) {
+            town = townData.getTownByPlayer(player.getUUID());
+        }
 
         /*addSlot(new Slot(container,0,0,0){
             @Override

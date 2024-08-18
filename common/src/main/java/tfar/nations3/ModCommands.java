@@ -237,4 +237,10 @@ public class ModCommands {
         commandSourceStack.sendSuccess(() -> Component.literal("Destroyed all Nations"),true);
         return 1;
     }
+
+    public static int getTownInfo(CommandContext<CommandSourceStack>ctx) {
+       // String name = StringArgumentType.getString(ctx,"name");
+        return 1;
+    }
+
 }

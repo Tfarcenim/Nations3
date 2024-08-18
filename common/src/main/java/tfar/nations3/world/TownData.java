@@ -90,6 +90,22 @@ public class TownData extends SavedData {
         }
     }
 
+    public List<Town> getTowns() {
+        return towns;
+    }
+
+    public Map<String, Town> getTownsByName() {
+        return towns_by_name;
+    }
+
+    public List<Nation> getNations() {
+        return nations;
+    }
+
+    public Map<String, Nation> getNationsByName() {
+        return nations_by_name;
+    }
+
     @Nullable
     public Town getOwnerOf(ChunkPos pos) {
         for (Town town : towns) {
@@ -203,6 +219,7 @@ public class TownData extends SavedData {
         Nation nation = new Nation(this);
         nation.load(tag);
         nations.add(nation);
+        nations_by_name.put(nation.getName(),nation);
     }
 
     protected void loadTown(CompoundTag tag) {

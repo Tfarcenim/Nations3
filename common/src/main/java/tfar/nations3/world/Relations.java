@@ -1,10 +1,14 @@
 package tfar.nations3.world;
 
 public enum Relations {
-    WILDERNESS(0x00ffffff),OWN(0xff00ff00),NEUTRAL(0xff00ffff),FRIENDLY(0xffffff00),HOSTILE(0xff0000ff);
+    WILDERNESS(0x00ffffff),//clear
+    OWN(0xff00ff00),//green
+    NEUTRAL(0xffffff00),//yellow
+    FRIENDLY(0xff00ffff),//cyan
+    HOSTILE(0xffff0000);//red
 
     /**
-     * agbr
+     * argb
      */
     public final int color;
 

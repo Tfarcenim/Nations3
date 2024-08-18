@@ -5,6 +5,7 @@ import net.minecraft.core.Registry;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraftforge.common.UsernameCache;
 import org.apache.commons.lang3.tuple.Pair;
 import tfar.nations3.Nations3;
 import tfar.nations3.Nations3Forge;
@@ -19,6 +20,7 @@ import net.minecraftforge.fml.loading.FMLLoader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -83,4 +85,8 @@ public class ForgePlatformHelper implements IPlatformHelper {
         PacketHandlerForge.sendToServer(msg);
     }
 
+    @Override
+    public String getLastKnownUserName(UUID uuid) {
+        return UsernameCache.getLastKnownUsername(uuid);
+    }
 }

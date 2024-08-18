@@ -11,7 +11,6 @@ import net.minecraftforge.fml.event.config.ModConfigEvent;
 import org.apache.commons.lang3.tuple.Pair;
 import tfar.nations3.platform.MLConfig;
 
-import java.util.Arrays;
 import java.util.List;
 
 public class TomlConfig implements MLConfig {
@@ -32,13 +31,25 @@ public class TomlConfig implements MLConfig {
         return Server.cache;
     }
 
+    @Override
+    public long getRent() {
+        return Server.rent.get();
+    }
+
+    @Override
+    public int getNationThreshold() {
+        return Server.nation_threshold.get();
+    }
+
     public static class Server {
-        public static ForgeConfigSpec.IntValue weekly_cost;
+        public static ForgeConfigSpec.LongValue rent;
+        public static ForgeConfigSpec.IntValue nation_threshold;
         public static ForgeConfigSpec.ConfigValue<List<? extends String>> deposit_values;
         public static Object2LongMap<Item> cache = new Object2LongOpenHashMap<>();
         public Server(ForgeConfigSpec.Builder builder) {
             builder.push("general");
-            weekly_cost = builder.defineInRange("weekly_cost",1,0,1000000000);
+            rent = builder.defineInRange("rent",1,0,1000000000L);
+            nation_threshold = builder.defineInRange("nation_threshold",5,1,1000);
             deposit_values = builder
                     .comment("Deposit values")
                     .defineList("deposit_values",() -> defaults, String.class::isInstance);

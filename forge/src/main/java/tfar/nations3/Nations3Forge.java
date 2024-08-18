@@ -3,9 +3,14 @@ package tfar.nations3;
 import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegisterCommandsEvent;
+import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.level.SleepFinishedTimeEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.fml.LogicalSide;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
@@ -35,6 +40,8 @@ public class Nations3Forge {
         bus.addListener(ModDatagen::gather);
         bus.addListener(TomlConfig::configLoad);
         MinecraftForge.EVENT_BUS.addListener(this::commands);
+        MinecraftForge.EVENT_BUS.addListener(this::levelTick);
+        MinecraftForge.EVENT_BUS.addListener(EventPriority.LOW, this::afterSleep);
         if (FMLEnvironment.dist.isClient()) {
             ModClientForge.init(bus);
         }
@@ -44,6 +51,18 @@ public class Nations3Forge {
     
         // Use Forge to bootstrap the Common mod.
         Nations3.init();
+    }
+
+    public void afterSleep(SleepFinishedTimeEvent event) {
+        ServerLevel level = (ServerLevel) event.getLevel();
+        long newTime = event.getNewTime();
+        Nations3.afterSleep(level,newTime);
+    }
+
+    public void levelTick(TickEvent.LevelTickEvent event) {
+        if (event.side == LogicalSide.SERVER && event.phase == TickEvent.Phase.START) {
+            Nations3.tickLevel((ServerLevel) event.level);
+        }
     }
 
     public void registerObjs(RegisterEvent event) {

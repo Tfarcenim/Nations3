@@ -5,4 +5,6 @@ import net.minecraft.world.item.Item;
 
 public interface MLConfig {
     Object2LongMap<Item> getDepositValues();
+    long getRent();
+    int getNationThreshold();
 }

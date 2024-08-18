@@ -3,6 +3,7 @@ package tfar.nations3;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
@@ -15,6 +16,7 @@ import tfar.nations3.init.ModItems;
 import tfar.nations3.init.ModMenuTypes;
 import tfar.nations3.network.PacketHandler;
 import tfar.nations3.platform.Services;
+import tfar.nations3.world.TownData;
 
 import java.util.stream.Stream;
 
@@ -37,6 +39,20 @@ public class Nations3 {
         Services.PLATFORM.registerAll(ModMenuTypes.class, BuiltInRegistries.MENU, (Class<MenuType<?>>) (Object)MenuType.class);
         Services.PLATFORM.registerAll(ModCreativeTabs.class, BuiltInRegistries.CREATIVE_MODE_TAB, CreativeModeTab.class);
         PacketHandler.registerPackets();
+    }
+
+    public static void tickLevel(ServerLevel level) {
+        TownData townData = TownData.getInstance(level);
+        if (townData != null) {
+            townData.tick();
+        }
+    }
+
+    public static void afterSleep(ServerLevel level, long newTime) {
+        long oldTime = level.getDayTime();
+        long weekOld = oldTime / TownData.INTERVAL;
+        long weekNew = newTime / TownData.INTERVAL;
+        long diff = weekNew - weekOld;
     }
 
     public static ResourceLocation id(String path) {

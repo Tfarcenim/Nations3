@@ -53,6 +53,12 @@ public class Nations3 {
         long weekOld = oldTime / TownData.INTERVAL;
         long weekNew = newTime / TownData.INTERVAL;
         long diff = weekNew - weekOld;
+        TownData townData = TownData.getInstance(level);
+        if (townData != null) {
+            for (int i = 0; i < diff;i++) {
+                townData.payRent();
+            }
+        }
     }
 
     public static ResourceLocation id(String path) {

@@ -107,6 +107,10 @@ public class ClaimingTableMenu extends AbstractContainerMenu {
         return stillValid(this.access, player, ModBlocks.CLAIMING_TABLE);
     }
 
+    public ContainerLevelAccess getAccess() {
+        return access;
+    }
+
     public void setTownInfo(int index, TownInfo value) {
         this.townInfoSlots.get(index).set(value);
     }

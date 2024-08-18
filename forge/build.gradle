@@ -42,8 +42,15 @@ minecraft {
             }
         }
 
+        client2 {
+            parent runs.client
+            args '--username', 'Dev1'
+            workingDirectory project.file('run2')
+            taskName 'Client 2'
+        }
+
         server {
-            workingDirectory project.file('run')
+            workingDirectory project.file('runserver')
             ideaModule "${rootProject.name}.${project.name}.main"
             taskName 'Server'
             property 'mixin.env.remapRefMap', 'true'

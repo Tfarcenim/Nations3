@@ -52,6 +52,10 @@ public class TownData extends SavedData {
         return town;
     }
 
+    public void clearAllClaims(Town town) {
+        town.clearClaimed();
+    }
+
     public void destroyTown(Town town) {
         if (town != null) {
             towns.remove(town);
@@ -122,6 +126,12 @@ public class TownData extends SavedData {
     @Nullable
     public Town getTownByName(String name) {
         return towns_by_name.get(name);
+    }
+
+    public void clearAllClaimed() {
+        for (Town town : towns) {
+            town.clearClaimed();
+        }
     }
 
     public void destroyAllNations() {

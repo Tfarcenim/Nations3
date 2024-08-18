@@ -21,6 +21,17 @@ public class ModCommands {
                                 .executes(ModCommands::createTown)
                         )
                 )
+                .then(Commands.literal("clear_claims")
+                        .executes(ModCommands::removeAllOwnClaims)
+                        .then(Commands.argument("name", StringArgumentType.string())
+                                .requires(commandSourceStack -> commandSourceStack.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                                .executes(ModCommands::removeAllClaims)
+                        )
+                        .then(Commands.literal("all")
+                                .requires(commandSourceStack -> commandSourceStack.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                                .executes(ModCommands::removeAllAllClaims)
+                        )
+                )
                 .then(Commands.literal("destroy")
                         .executes(ModCommands::destroyOwnTown)
                         .then(Commands.argument("name", StringArgumentType.string())
@@ -72,12 +83,55 @@ public class ModCommands {
         return 1;
     }
 
+
+    public static int removeAllOwnClaims(CommandContext<CommandSourceStack>ctx) throws CommandSyntaxException {
+        CommandSourceStack commandSourceStack = ctx.getSource();
+        ServerPlayer player = commandSourceStack.getPlayerOrException();
+        TownData townData = TownData.getOrCreateInstance(player.serverLevel());
+        Town town = townData.getTownByPlayer(player.getUUID());
+        if (town!= null && town.getOwner().equals(player.getUUID())) {
+            commandSourceStack.sendSuccess(() -> Component.literal("Successfully cleared all claims"),false);
+            townData.clearAllClaims(town);
+            return 1;
+        } else {
+            commandSourceStack.sendFailure(Component.literal("You do not own any towns"));
+            return 0;
+        }
+
+    }
+
+    public static int removeAllClaims(CommandContext<CommandSourceStack>ctx) {
+        String name = StringArgumentType.getString(ctx,"name");
+        CommandSourceStack commandSourceStack = ctx.getSource();
+        TownData townData = TownData.getOrCreateInstance(commandSourceStack.getLevel());
+        Town town = townData.getTownByName(name);
+        if (town!= null) {
+            townData.clearAllClaims(town);
+            commandSourceStack.sendSuccess(() -> Component.literal("Successfully cleared all claims of town "+name),false);
+            return 1;
+        } else {
+            commandSourceStack.sendFailure(Component.literal("There is no town with the name "+name));
+            return 0;
+        }
+    }
+
+    public static int removeAllAllClaims(CommandContext<CommandSourceStack>ctx) {
+        CommandSourceStack commandSourceStack = ctx.getSource();
+        TownData townData = TownData.getInstance(commandSourceStack.getLevel());
+        if (townData != null) {
+            townData.clearAllClaimed();
+            commandSourceStack.sendSuccess(() -> Component.literal("Successfully cleared all claims of all towns"),false);
+        }
+        commandSourceStack.sendSuccess(() -> Component.literal("Destroyed all Towns and Nations"),true);
+        return 1;
+    }
+
     public static int destroyOwnTown(CommandContext<CommandSourceStack>ctx) throws CommandSyntaxException {
         CommandSourceStack commandSourceStack = ctx.getSource();
         ServerPlayer player = commandSourceStack.getPlayerOrException();
         TownData townData = TownData.getOrCreateInstance(player.serverLevel());
         Town town = townData.getTownByPlayer(player.getUUID());
-        if (town!= null) {
+        if (town!= null && town.getOwner().equals(player.getUUID())) {
             commandSourceStack.sendSuccess(() -> Component.literal("Successfully destroyed own town"),false);
             townData.destroyTown(town);
             return 1;
@@ -94,6 +148,7 @@ public class ModCommands {
         Town town = townData.getTownByName(name);
         if (town!= null) {
             townData.destroyTown(town);
+            commandSourceStack.sendSuccess(() -> Component.literal("Successfully destroyed town "+name),false);
             return 1;
         } else {
             commandSourceStack.sendFailure(Component.literal("There is no town with the name "+name));
@@ -149,12 +204,12 @@ public class ModCommands {
         ServerPlayer player = commandSourceStack.getPlayerOrException();
         TownData townData = TownData.getOrCreateInstance(player.serverLevel());
         Town town = townData.getTownByPlayer(player.getUUID());
-        if (town!= null) {
-            commandSourceStack.sendSuccess(() -> Component.literal("Successfully destroyed own town"),false);
+        if (town != null && town.getOwner().equals(player.getUUID())) {
+            commandSourceStack.sendSuccess(() -> Component.literal("Successfully destroyed own nation"),false);
             townData.destroyTown(town);
             return 1;
         } else {
-            commandSourceStack.sendFailure(Component.literal("You do not own any towns"));
+            commandSourceStack.sendFailure(Component.literal("You do not own any nations"));
             return 0;
         }
     }

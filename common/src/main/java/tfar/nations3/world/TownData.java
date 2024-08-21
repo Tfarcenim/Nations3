@@ -119,7 +119,7 @@ public class TownData extends SavedData {
     @Nullable
     public Town getTownByPlayer(UUID uuid) {
         for (Town town : towns) {
-            if (town.containsPlayer(uuid))return town;
+            if (town.containsCitizen(uuid))return town;
         }
         return null;
     }

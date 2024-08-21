@@ -10,12 +10,16 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;
+import net.minecraft.commands.arguments.GameProfileArgument;
+import net.minecraft.commands.arguments.UuidArgument;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import tfar.nations3.platform.Services;
 import tfar.nations3.world.Town;
 import tfar.nations3.world.TownData;
+import tfar.nations3.world.TownPermission;
+import tfar.nations3.world.TownPermissions;
 
 import java.util.*;
 
@@ -57,6 +61,28 @@ public class ModCommands {
                         .then(Commands.argument("name", StringArgumentType.string())
                                 .suggests(ALL_TOWNS)
                                 .executes(ModCommands::getTownInfo)
+                        )
+                )
+
+                .then(Commands.literal("permission")
+                        .then(Commands.literal("grant")
+                                .then(Commands.argument("player", GameProfileArgument.gameProfile())
+                                        .then(Commands.argument("permission",StringArgumentType.string())
+                                                .executes(ModCommands::grantTownPermission)
+                                        )
+                                )
+                                .executes(ModCommands::removeAllOwnClaims))
+                        .then(Commands.literal("revoke")
+                                .then(Commands.argument("player", GameProfileArgument.gameProfile())
+                                        .then(Commands.argument("permission",StringArgumentType.string())
+                                                .executes(ModCommands::revokeTownPermission)
+                                        )
+                                )
+                        )
+                        .then(Commands.literal("check")
+                                .then(Commands.argument("player", GameProfileArgument.gameProfile())
+                                        .executes(ModCommands::checkPermissions)
+                                )
                         )
                 )
         );
@@ -166,6 +192,153 @@ public class ModCommands {
         } else {
             return 0;
         }
+    }
+
+    //town permission grant <player> permission_string
+    public static int revokeTownPermission(CommandContext<CommandSourceStack>ctx) throws CommandSyntaxException {
+        CommandSourceStack commandSourceStack = ctx.getSource();
+        String perm = StringArgumentType.getString(ctx,"permission");
+
+        TownPermission townPermission = TownPermissions.getPermission(perm);
+        if (townPermission == null) {
+            commandSourceStack.sendFailure(Component.literal("No such permission: "+perm));
+            return 0;
+        }
+
+
+        TownData townData = TownData.getInstance(commandSourceStack.getLevel());
+        if (townData != null) {
+            GameProfile target = GameProfileArgument.getGameProfiles(ctx,"player").iterator().next();
+            Town targetTown = townData.getTownByPlayer(target.getId());
+            if (targetTown == null) {
+                commandSourceStack.sendFailure(Component.literal("Target player is not in town"));
+                return 0;
+            }
+
+            if (targetTown.isOwner(target.getId())) {
+                commandSourceStack.sendFailure(Component.literal("Cannot modify permissions of town owner"));
+                return 0;
+            }
+
+            if (commandSourceStack.isPlayer()) {
+                ServerPlayer owner = commandSourceStack.getPlayerOrException();
+
+                boolean op = commandSourceStack.hasPermission(Commands.LEVEL_GAMEMASTERS);
+
+                Town town = townData.getTownByPlayer(owner.getUUID());
+
+                if (!op && town == null) {
+                    commandSourceStack.sendFailure(TextComponents.NOT_IN_TOWN);
+                    return 0;
+                }
+
+                if (!op && targetTown != town) {
+                    commandSourceStack.sendFailure(Component.literal("Cannot modify other town's permission"));
+                    return 0;
+                }
+
+                if (!op && !town.isOwner(owner.getUUID())) {
+                    commandSourceStack.sendFailure(TextComponents.NOT_TOWN_OWNER);
+                }
+
+            }
+
+            targetTown.revokePermission(target.getId(), townPermission);
+            return 1;
+
+        }
+        return 0;
+    }
+
+    //town permission grant <player> permission_string
+    public static int grantTownPermission(CommandContext<CommandSourceStack>ctx) throws CommandSyntaxException {
+        CommandSourceStack commandSourceStack = ctx.getSource();
+        String perm = StringArgumentType.getString(ctx,"permission");
+
+        TownPermission townPermission = TownPermissions.getPermission(perm);
+        if (townPermission == null) {
+            commandSourceStack.sendFailure(Component.literal("No such permission: "+perm));
+            return 0;
+        }
+
+        TownData townData = TownData.getInstance(commandSourceStack.getLevel());
+        if (townData != null) {
+            GameProfile target = GameProfileArgument.getGameProfiles(ctx,"player").iterator().next();
+            Town targetTown = townData.getTownByPlayer(target.getId());
+            if (targetTown == null) {
+                commandSourceStack.sendFailure(Component.literal("Target player is not in town"));
+                return 0;
+            }
+
+            if (targetTown.isOwner(target.getId())) {
+                commandSourceStack.sendFailure(Component.literal("Cannot modify permissions of town owner"));
+                return 0;
+            }
+
+            if (commandSourceStack.isPlayer()) {
+                ServerPlayer owner = commandSourceStack.getPlayerOrException();
+
+                boolean op = commandSourceStack.hasPermission(Commands.LEVEL_GAMEMASTERS);
+
+                Town town = townData.getTownByPlayer(owner.getUUID());
+
+                if (!op && town == null) {
+                    commandSourceStack.sendFailure(TextComponents.NOT_IN_TOWN);
+                    return 0;
+                }
+
+
+
+                if (!op && targetTown != town) {
+                    commandSourceStack.sendFailure(Component.literal("Cannot modify other town's permission"));
+                    return 0;
+                }
+
+                if (!op && !town.isOwner(owner.getUUID())) {
+                    commandSourceStack.sendFailure(TextComponents.NOT_TOWN_OWNER);
+                }
+
+            }
+
+            targetTown.grantPermission(target.getId(), townPermission);
+            return 1;
+
+        }
+        return 0;
+    }
+
+    public static int checkPermissions(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+        CommandSourceStack commandSourceStack = ctx.getSource();
+        Collection<GameProfile> gameProfiles = GameProfileArgument.getGameProfiles(ctx,"player");
+
+        GameProfile gameProfile = gameProfiles.iterator().next();
+
+        TownData townData = TownData.getInstance(commandSourceStack.getLevel());
+        if (townData != null) {
+            Town town = townData.getTownByPlayer(gameProfile.getId());
+            if (town == null) {
+                commandSourceStack.sendFailure(Component.literal("Target is not in a town"));
+                return 0;
+            }
+
+            commandSourceStack.sendSuccess(() -> Component.literal("Permissions for "+Services.PLATFORM.getLastKnownUserName(gameProfile.getId()))
+                    .withStyle(ChatFormatting.UNDERLINE),false);
+            Set<TownPermission> permissions = town.getPermissions(gameProfile.getId());
+            List<Component> components = new ArrayList<>();
+            if (permissions.isEmpty()) {
+                components.add(Component.literal("None"));
+            } else {
+                for (TownPermission townPermission : permissions) {
+                    components.add(Component.literal(townPermission.key()));
+                }
+            }
+
+            for (Component component : components) {
+                commandSourceStack.sendSuccess(() -> component,false);
+            }
+
+        }
+        return 1;
     }
 
     public static int destroyOwnTown(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {

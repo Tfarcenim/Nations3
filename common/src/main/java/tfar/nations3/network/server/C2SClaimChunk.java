@@ -7,6 +7,7 @@ import net.minecraft.world.level.ChunkPos;
 import tfar.nations3.menu.ClaimingTableMenu;
 import tfar.nations3.world.Town;
 import tfar.nations3.world.TownData;
+import tfar.nations3.world.TownPermissions;
 
 public class C2SClaimChunk implements C2SModPacket {
 
@@ -35,7 +36,7 @@ public class C2SClaimChunk implements C2SModPacket {
             TownData townData = TownData.getInstance(player.serverLevel());
             if (townData != null) {
                 Town town = townData.getTownByPlayer(player.getUUID());
-                if (town != null && town.containsPlayer(player.getUUID())) {
+                if (town != null && town.checkPermission(player.getUUID(), TownPermissions.MANAGE_CLAIMS)) {
                     if (remove) {
                         town.unClaim(chunkPos);
                     } else {

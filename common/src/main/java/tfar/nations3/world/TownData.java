@@ -80,11 +80,20 @@ public class TownData extends SavedData {
             int size = claimed.size();
             if (size > 0) {
                 long rentPayment = size * Services.PLATFORM.getConfig().getRent();
-                if (rentPayment > town.getMoney()) {
+                Nation enclosing = getNationByTown(town);
+                long nationPayment = 0;
+                if (enclosing != null) {
+                    nationPayment = (long) (Services.PLATFORM.getConfig().getNationTaxRate() * rentPayment);
+                }
+
+                if ((rentPayment+nationPayment) > town.getMoney()) {
                     town.clearClaimed();
                     Nations3.LOG.info("Removed all claimed chunks from town {} as they couldn't afford rent", town.getName());
                 } else {
-                    town.deposit(-rentPayment);
+                    town.deposit(-rentPayment -nationPayment);
+                    if (enclosing != null) {
+                        enclosing.deposit(nationPayment);
+                    }
                 }
             }
         }
@@ -120,6 +129,17 @@ public class TownData extends SavedData {
     public Town getTownByPlayer(UUID uuid) {
         for (Town town : towns) {
             if (town.containsCitizen(uuid))return town;
+        }
+        return null;
+    }
+
+    @Nullable
+    public Nation getNationByPlayer(UUID uuid) {
+        Town town = getTownByPlayer(uuid);
+        if (town == null) return null;
+
+        for (Nation nation : nations) {
+            if (nation.containsTown(town)) return nation;
         }
         return null;
     }

@@ -1,25 +1,19 @@
-package tfar.nations3;
+package tfar.nations3.commands;
 
 import com.mojang.authlib.GameProfile;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import com.mojang.brigadier.suggestion.SuggestionProvider;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
-import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.commands.arguments.GameProfileArgument;
-import net.minecraft.commands.arguments.UuidArgument;
 import net.minecraft.network.chat.Component;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import tfar.nations3.TextComponents;
 import tfar.nations3.platform.Services;
-import tfar.nations3.world.Town;
-import tfar.nations3.world.TownData;
-import tfar.nations3.world.TownPermission;
-import tfar.nations3.world.TownPermissions;
+import tfar.nations3.world.*;
 
 import java.util.*;
 
@@ -36,7 +30,7 @@ public class ModCommands {
                         .executes(ModCommands::removeAllOwnClaims)
                         .then(Commands.argument("name", StringArgumentType.string())
                                 .requires(commandSourceStack -> commandSourceStack.hasPermission(Commands.LEVEL_GAMEMASTERS))
-                                .suggests(ALL_TOWNS)
+                                .suggests(Suggestions.ALL_TOWNS)
                                 .executes(ModCommands::removeAllClaims)
                         )
                         .then(Commands.literal("all")
@@ -48,7 +42,7 @@ public class ModCommands {
                         .executes(ModCommands::destroyOwnTown)
                         .then(Commands.argument("name", StringArgumentType.string())
                                 .requires(commandSourceStack -> commandSourceStack.hasPermission(Commands.LEVEL_GAMEMASTERS))
-                                .suggests(ALL_TOWNS)
+                                .suggests(Suggestions.ALL_TOWNS)
                                 .executes(ModCommands::destroyTown)
                         )
                         .then(Commands.literal("all")
@@ -59,7 +53,7 @@ public class ModCommands {
                 .then(Commands.literal("info")
                         .executes(ModCommands::getOwnTownInfo)
                         .then(Commands.argument("name", StringArgumentType.string())
-                                .suggests(ALL_TOWNS)
+                                .suggests(Suggestions.ALL_TOWNS)
                                 .executes(ModCommands::getTownInfo)
                         )
                 )
@@ -67,14 +61,14 @@ public class ModCommands {
                 .then(Commands.literal("permission")
                         .then(Commands.literal("grant")
                                 .then(Commands.argument("player", GameProfileArgument.gameProfile())
-                                        .then(Commands.argument("permission",StringArgumentType.string())
+                                        .then(Commands.argument("permission", StringArgumentType.string())
                                                 .executes(ModCommands::grantTownPermission)
                                         )
                                 )
                                 .executes(ModCommands::removeAllOwnClaims))
                         .then(Commands.literal("revoke")
                                 .then(Commands.argument("player", GameProfileArgument.gameProfile())
-                                        .then(Commands.argument("permission",StringArgumentType.string())
+                                        .then(Commands.argument("permission", StringArgumentType.string())
                                                 .executes(ModCommands::revokeTownPermission)
                                         )
                                 )
@@ -97,7 +91,7 @@ public class ModCommands {
                         .executes(ModCommands::destroyOwnNation)
                         .then(Commands.argument("name", StringArgumentType.string())
                                 .requires(commandSourceStack -> commandSourceStack.hasPermission(Commands.LEVEL_GAMEMASTERS))
-                                .suggests(ALL_NATIONS)
+                                .suggests(Suggestions.ALL_NATIONS)
                                 .executes(ModCommands::destroyNation)
                         )
                         .then(Commands.literal("all")
@@ -105,30 +99,15 @@ public class ModCommands {
                                 .executes(ModCommands::destroyAllNations)
                         )
                 )
+                .then(Commands.literal("info")
+                        .executes(ModCommands::getOwnNationInfo)
+                        .then(Commands.argument("name", StringArgumentType.string())
+                                .suggests(Suggestions.ALL_NATIONS)
+                                .executes(ModCommands::getNationInfo)
+                        )
+                )
         );
     }
-
-    protected static final SuggestionProvider<CommandSourceStack> ALL_TOWNS = (commandContext, suggestionsBuilder) -> {
-        ServerLevel serverLevel = commandContext.getSource().getLevel();
-        TownData townData = TownData.getInstance(serverLevel);
-        if (townData != null) {
-            Set<String> collection = townData.getTownsByName().keySet();
-            return SharedSuggestionProvider.suggest(collection,suggestionsBuilder);
-        } else {
-            return SharedSuggestionProvider.suggest(List.of(),suggestionsBuilder);
-        }
-    };
-
-    protected static final SuggestionProvider<CommandSourceStack> ALL_NATIONS = (commandContext, suggestionsBuilder) -> {
-        ServerLevel serverLevel = commandContext.getSource().getLevel();
-        TownData townData = TownData.getInstance(serverLevel);
-        if (townData != null) {
-            Set<String> collection = townData.getNationsByName().keySet();
-            return SharedSuggestionProvider.suggest(collection,suggestionsBuilder);
-        } else {
-            return SharedSuggestionProvider.suggest(List.of(),suggestionsBuilder);
-        }
-    };
 
     public static int createTown(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
         String name = StringArgumentType.getString(ctx, "name");
@@ -195,20 +174,20 @@ public class ModCommands {
     }
 
     //town permission grant <player> permission_string
-    public static int revokeTownPermission(CommandContext<CommandSourceStack>ctx) throws CommandSyntaxException {
+    public static int revokeTownPermission(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
         CommandSourceStack commandSourceStack = ctx.getSource();
-        String perm = StringArgumentType.getString(ctx,"permission");
+        String perm = StringArgumentType.getString(ctx, "permission");
 
         TownPermission townPermission = TownPermissions.getPermission(perm);
         if (townPermission == null) {
-            commandSourceStack.sendFailure(Component.literal("No such permission: "+perm));
+            commandSourceStack.sendFailure(Component.literal("No such permission: " + perm));
             return 0;
         }
 
 
         TownData townData = TownData.getInstance(commandSourceStack.getLevel());
         if (townData != null) {
-            GameProfile target = GameProfileArgument.getGameProfiles(ctx,"player").iterator().next();
+            GameProfile target = GameProfileArgument.getGameProfiles(ctx, "player").iterator().next();
             Town targetTown = townData.getTownByPlayer(target.getId());
             if (targetTown == null) {
                 commandSourceStack.sendFailure(Component.literal("Target player is not in town"));
@@ -251,19 +230,19 @@ public class ModCommands {
     }
 
     //town permission grant <player> permission_string
-    public static int grantTownPermission(CommandContext<CommandSourceStack>ctx) throws CommandSyntaxException {
+    public static int grantTownPermission(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
         CommandSourceStack commandSourceStack = ctx.getSource();
-        String perm = StringArgumentType.getString(ctx,"permission");
+        String perm = StringArgumentType.getString(ctx, "permission");
 
         TownPermission townPermission = TownPermissions.getPermission(perm);
         if (townPermission == null) {
-            commandSourceStack.sendFailure(Component.literal("No such permission: "+perm));
+            commandSourceStack.sendFailure(Component.literal("No such permission: " + perm));
             return 0;
         }
 
         TownData townData = TownData.getInstance(commandSourceStack.getLevel());
         if (townData != null) {
-            GameProfile target = GameProfileArgument.getGameProfiles(ctx,"player").iterator().next();
+            GameProfile target = GameProfileArgument.getGameProfiles(ctx, "player").iterator().next();
             Town targetTown = townData.getTownByPlayer(target.getId());
             if (targetTown == null) {
                 commandSourceStack.sendFailure(Component.literal("Target player is not in town"));
@@ -288,7 +267,6 @@ public class ModCommands {
                 }
 
 
-
                 if (!op && targetTown != town) {
                     commandSourceStack.sendFailure(Component.literal("Cannot modify other town's permission"));
                     return 0;
@@ -309,7 +287,7 @@ public class ModCommands {
 
     public static int checkPermissions(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
         CommandSourceStack commandSourceStack = ctx.getSource();
-        Collection<GameProfile> gameProfiles = GameProfileArgument.getGameProfiles(ctx,"player");
+        Collection<GameProfile> gameProfiles = GameProfileArgument.getGameProfiles(ctx, "player");
 
         GameProfile gameProfile = gameProfiles.iterator().next();
 
@@ -321,8 +299,8 @@ public class ModCommands {
                 return 0;
             }
 
-            commandSourceStack.sendSuccess(() -> Component.literal("Permissions for "+Services.PLATFORM.getLastKnownUserName(gameProfile.getId()))
-                    .withStyle(ChatFormatting.UNDERLINE),false);
+            commandSourceStack.sendSuccess(() -> Component.literal("Permissions for " + Services.PLATFORM.getLastKnownUserName(gameProfile.getId()))
+                    .withStyle(ChatFormatting.UNDERLINE), false);
             Set<TownPermission> permissions = town.getPermissions(gameProfile.getId());
             List<Component> components = new ArrayList<>();
             if (permissions.isEmpty()) {
@@ -334,7 +312,7 @@ public class ModCommands {
             }
 
             for (Component component : components) {
-                commandSourceStack.sendSuccess(() -> component,false);
+                commandSourceStack.sendSuccess(() -> component, false);
             }
 
         }
@@ -466,7 +444,7 @@ public class ModCommands {
             if (town != null) {
                 List<Component> info = buildTownInfo(town);
                 for (Component component : info) {
-                    commandSourceStack.sendSuccess(() -> component,false);
+                    commandSourceStack.sendSuccess(() -> component, false);
                 }
                 return 1;
             }
@@ -484,7 +462,7 @@ public class ModCommands {
             if (town != null) {
                 List<Component> info = buildTownInfo(town);
                 for (Component component : info) {
-                    commandSourceStack.sendSuccess(() -> component,false);
+                    commandSourceStack.sendSuccess(() -> component, false);
                 }
                 return 1;
             }
@@ -496,14 +474,65 @@ public class ModCommands {
     protected static List<Component> buildTownInfo(Town town) {
         List<Component> list = new ArrayList<>();
         list.add(Component.literal("Town Info").withStyle(ChatFormatting.UNDERLINE));
-        list.add(Component.literal("Name: "+town.getName()));
-        list.add(Component.literal("Owner: "+Services.PLATFORM.getLastKnownUserName(town.getOwner())));
-        list.add(Component.literal("Money: "+town.getMoney()));
+        list.add(Component.literal("Name: " + town.getName()));
+        list.add(Component.literal("Owner: " + Services.PLATFORM.getLastKnownUserName(town.getOwner())));
+        list.add(Component.literal("Money: " + town.getMoney()));
         list.add(Component.literal("Citizens").withStyle(ChatFormatting.UNDERLINE));
         for (UUID uuid : town.getCitizens()) {
-            list.add(Component.literal("Citizen: "+Services.PLATFORM.getLastKnownUserName(uuid)));
+            list.add(Component.literal("Citizen: " + Services.PLATFORM.getLastKnownUserName(uuid)));
         }
-        list.add(Component.literal("Chunks claimed: "+town.getClaimed().size()));
+        list.add(Component.literal("Chunks claimed: " + town.getClaimed().size()));
+
+        return list;
+    }
+
+    public static int getNationInfo(CommandContext<CommandSourceStack> ctx) {
+        String name = StringArgumentType.getString(ctx, "name");
+        CommandSourceStack commandSourceStack = ctx.getSource();
+        TownData townData = TownData.getInstance(commandSourceStack.getLevel());
+        if (townData != null) {
+            Nation nation = townData.getNationByName(name);
+            if (nation != null) {
+                List<Component> info = buildNationInfo(nation);
+                for (Component component : info) {
+                    commandSourceStack.sendSuccess(() -> component, false);
+                }
+                return 1;
+            }
+        }
+        commandSourceStack.sendFailure(Component.literal("There is no nation with the name " + name));
+        return 0;
+    }
+
+    public static int getOwnNationInfo(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+        CommandSourceStack commandSourceStack = ctx.getSource();
+        ServerPlayer player = commandSourceStack.getPlayerOrException();
+        TownData townData = TownData.getInstance(commandSourceStack.getLevel());
+        if (townData != null) {
+            Nation nation = townData.getNationByPlayer(player.getUUID());
+            if (nation != null) {
+                List<Component> info = buildNationInfo(nation);
+                for (Component component : info) {
+                    commandSourceStack.sendSuccess(() -> component, false);
+                }
+                return 1;
+            }
+        }
+        commandSourceStack.sendFailure(TextComponents.NOT_IN_NATION);
+        return 0;
+    }
+
+    protected static List<Component> buildNationInfo(Nation nation) {
+        List<Component> list = new ArrayList<>();
+        list.add(Component.literal("Nation Info").withStyle(ChatFormatting.UNDERLINE));
+        list.add(Component.literal("Name: " + nation.getName()));
+        list.add(Component.literal("Owner: " + Services.PLATFORM.getLastKnownUserName(nation.getOwner())));
+        list.add(Component.literal("Money: " + nation.getMoney()));
+        list.add(Component.literal("Towns").withStyle(ChatFormatting.UNDERLINE));
+        for (Town town : nation.getTowns()) {
+            list.add(Component.literal("Town: " + town.getName()));
+        }
+        //ist.add(Component.literal("Chunks claimed: " + nation.getClaimed().size()));
 
         return list;
     }

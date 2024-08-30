@@ -41,18 +41,29 @@ public class TomlConfig implements MLConfig {
         return Server.nation_threshold.get();
     }
 
+    @Override
+    public double getNationTaxRate() {
+        return Server.nation_tax_rate.get();
+    }
+
     public static class Server {
         public static ForgeConfigSpec.LongValue rent;
         public static ForgeConfigSpec.IntValue nation_threshold;
         public static ForgeConfigSpec.ConfigValue<List<? extends String>> deposit_values;
+        public static ForgeConfigSpec.DoubleValue nation_tax_rate;
         public static Object2LongMap<Item> cache = new Object2LongOpenHashMap<>();
+
+
         public Server(ForgeConfigSpec.Builder builder) {
             builder.push("general");
-            rent = builder.defineInRange("rent",1,0,1000000000L);
+            rent = builder.defineInRange("rent",200,0,1000000000L);
             nation_threshold = builder.defineInRange("nation_threshold",5,1,1000);
             deposit_values = builder
                     .comment("Deposit values")
                     .defineList("deposit_values",() -> defaults, String.class::isInstance);
+
+            nation_tax_rate = builder.defineInRange("nation_tax_rate",.025,0,1000);
+
             builder.pop();
         }
     }

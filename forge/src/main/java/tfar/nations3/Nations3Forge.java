@@ -20,6 +20,7 @@ import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.registries.RegisterEvent;
 import org.apache.commons.lang3.tuple.Pair;
 import tfar.nations3.client.ModClientForge;
+import tfar.nations3.commands.ModCommands;
 import tfar.nations3.datagen.ModDatagen;
 
 import java.util.HashMap;

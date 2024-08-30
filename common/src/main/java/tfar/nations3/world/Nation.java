@@ -15,6 +15,7 @@ public class Nation {
     private UUID owner;
     private String name;
     private final List<Town> towns = new ArrayList<>();
+    private long money;
 
     public Nation(TownData data) {
         this.data = data;
@@ -29,6 +30,11 @@ public class Nation {
 
     public boolean containsTown(Town town) {
         return towns.contains(town);
+    }
+
+    public void deposit(long amount) {
+        money+= amount;
+        setDirty();
     }
 
     public boolean addTown(Town town) {
@@ -49,6 +55,18 @@ public class Nation {
         return remove;
     }
 
+    public UUID getOwner() {
+        return owner;
+    }
+
+    public long getMoney() {
+        return money;
+    }
+
+    public List<Town> getTowns() {
+        return towns;
+    }
+
     public void setDirty() {
         data.setDirty();
     }
@@ -58,6 +76,7 @@ public class Nation {
         tag.putUUID("owner", owner);
         tag.putString("name",name);
         tag.put("towns", saveTowns());
+        tag.putLong("money",money);
         return tag;
     }
 
@@ -78,5 +97,6 @@ public class Nation {
             Town town = data.getTownByName(stringTag.getAsString());
             towns.add(town);
         }
+        money = tag.getLong("money");
     }
 }

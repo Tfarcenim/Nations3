@@ -7,4 +7,5 @@ public interface MLConfig {
     Object2LongMap<Item> getDepositValues();
     long getRent();
     int getNationThreshold();
+    double getNationTaxRate();
 }

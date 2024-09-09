@@ -2,6 +2,7 @@ package tfar.nations3.commands;
 
 import com.mojang.authlib.GameProfile;
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.LongArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
@@ -25,6 +26,9 @@ public class ModCommands {
                         .then(Commands.argument("name", StringArgumentType.string())
                                 .executes(ModCommands::createTown)
                         )
+                )
+                .then(Commands.literal("tax_rate")
+                        .then(Commands.argument("tax_rate", LongArgumentType.longArg(0)).executes(ModCommands::setTaxRate))
                 )
                 .then(Commands.literal("clear_claims")
                         .executes(ModCommands::removeAllOwnClaims)
@@ -127,6 +131,27 @@ public class ModCommands {
         return 1;
     }
 
+    public static int setTaxRate(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+        CommandSourceStack commandSourceStack = ctx.getSource();
+        ServerPlayer player = commandSourceStack.getPlayerOrException();
+        long taxRate = LongArgumentType.getLong(ctx,"tax_rate");
+        TownData townData = TownData.getInstance(commandSourceStack.getLevel());
+        if (townData != null) {
+            Town town = townData.getTownByPlayer(player.getUUID());
+            if (town != null) {
+                if (town.checkPermission(player.getUUID(),TownPermissions.MANAGE_PERSONAL_TAX)) {
+                    town.setTaxRate(taxRate);
+                    commandSourceStack.sendSuccess(() -> Component.literal("Set town tax rate to "+taxRate),false);
+                    return 1;
+                } else {
+                    commandSourceStack.sendFailure(TextComponents.INSUFFICIENT_PERMISSION);
+                    return 0;
+                }
+            }
+        }
+        commandSourceStack.sendFailure(TextComponents.NOT_IN_TOWN);
+        return 0;
+    }
 
     public static int removeAllOwnClaims(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
         CommandSourceStack commandSourceStack = ctx.getSource();
@@ -228,6 +253,7 @@ public class ModCommands {
         }
         return 0;
     }
+
 
     //town permission grant <player> permission_string
     public static int grantTownPermission(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
@@ -477,6 +503,7 @@ public class ModCommands {
         list.add(Component.literal("Name: " + town.getName()));
         list.add(Component.literal("Owner: " + Services.PLATFORM.getLastKnownUserName(town.getOwner())));
         list.add(Component.literal("Money: " + town.getMoney()));
+        list.add(Component.literal("Tax Rate: "+town.getTaxRate()));
         list.add(Component.literal("Citizens").withStyle(ChatFormatting.UNDERLINE));
         for (UUID uuid : town.getCitizens()) {
             list.add(Component.literal("Citizen: " + Services.PLATFORM.getLastKnownUserName(uuid)));

@@ -13,6 +13,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
+import tfar.nations3.TextComponents;
 import tfar.nations3.platform.Services;
 import tfar.nations3.world.Town;
 import tfar.nations3.world.TownData;
@@ -37,16 +38,16 @@ public class DepositStationBlock extends Block {
                         Object2LongMap<Item> depositValues = Services.PLATFORM.getConfig().getDepositValues();
                         if (depositValues.containsKey(item)) {
                             long value = stack.getCount() * depositValues.getLong(item);
-                            town.deposit(value);
+                            town.personalDeposit(player.getUUID(),value);
                             if (!player.getAbilities().instabuild) {
                             player.setItemInHand(pHand, ItemStack.EMPTY);
                             }
-                            player.displayClientMessage(Component.literal("Deposited " + value + " money for " + town.getName()), false);
-                            player.displayClientMessage(Component.literal("New balance: " + town.getMoney()), false);
+                            player.displayClientMessage(Component.literal("Deposited " + value + " money for " + town.getName() +" under "+player.getGameProfile().getName()), false);
+                            player.displayClientMessage(Component.literal("New balance: " + town.getInfo(player.getUUID()).money), false);
                         }
                     }
                 } else {
-                    player.displayClientMessage(Component.literal("You are not in any towns"), true);
+                    player.displayClientMessage(TextComponents.NOT_IN_TOWN, true);
                 }
             }
         }

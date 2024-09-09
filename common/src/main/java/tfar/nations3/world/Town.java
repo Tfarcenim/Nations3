@@ -1,7 +1,11 @@
 package tfar.nations3.world;
 
 import net.minecraft.nbt.*;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.ChunkPos;
+import org.jetbrains.annotations.Nullable;
+import tfar.nations3.platform.Services;
 
 import java.util.*;
 
@@ -10,9 +14,10 @@ public class Town {
     private final TownData townData;
     private UUID owner;
     private String name;
-    private final Map<UUID,Set<TownPermission>> citizens = new HashMap<>();
+    private final Map<UUID,CitizenInfo> citizens = new HashMap<>();
     private final Set<ChunkPos> claimed = new HashSet<>();
     private long money;
+    private long taxRate;
 
     public Town(TownData townData) {
         this.townData = townData;
@@ -23,6 +28,10 @@ public class Town {
         this.owner = owner;
         this.name = name;
         setOwner(owner);
+    }
+
+    public void setTaxRate(long taxRate) {
+        this.taxRate = taxRate;
     }
 
     public String getName() {
@@ -39,19 +48,20 @@ public class Town {
     }
 
     public void addCitizen(UUID uuid) {
-        citizens.put(uuid,new HashSet<>());
+        citizens.put(uuid,new CitizenInfo());
         setDirty();
     }
 
     public void setOwner(UUID owner) {
         this.owner = owner;
-        citizens.put(owner,new HashSet<>(TownPermissions.getAllPermissions()));
+        citizens.put(owner,new CitizenInfo(0,new HashSet<>(TownPermissions.getAllPermissions())));
         setDirty();
     }
 
     public void grantPermission(UUID uuid,TownPermission townPermission) {
         if (citizens.containsKey(uuid)) {
-            Set<TownPermission> permissions = citizens.computeIfAbsent(uuid,uuid1 -> new HashSet<>());
+            CitizenInfo citizeninfo = citizens.get(uuid);
+            Set<TownPermission> permissions = citizeninfo.permissions;
             permissions.add(townPermission);
             setDirty();
         }
@@ -59,7 +69,8 @@ public class Town {
 
     public void revokePermission(UUID uuid,TownPermission townPermission) {
         if (citizens.containsKey(uuid)) {
-            Set<TownPermission> permissions = citizens.get(uuid);
+            CitizenInfo citizeninfo = citizens.get(uuid);
+            Set<TownPermission> permissions = citizeninfo.permissions;
             if (permissions == null) return;
             permissions.remove(townPermission);
             setDirty();
@@ -67,7 +78,8 @@ public class Town {
     }
 
     public boolean checkPermission(UUID uuid,TownPermission permission) {
-        return citizens.containsKey(uuid) && citizens.get(uuid).contains(permission);
+        if (Objects.equals(owner,uuid)) return true;
+        return citizens.containsKey(uuid) && citizens.get(uuid).permissions.contains(permission);
     }
 
     public UUID getOwner() {
@@ -86,9 +98,14 @@ public class Town {
         return citizens.keySet();
     }
 
+    @Nullable
+    public CitizenInfo getInfo(UUID uuid) {
+        return citizens.get(uuid);
+    }
+
     public Set<TownPermission> getPermissions(UUID uuid) {
         if (citizens.containsKey(uuid)) {
-            return citizens.get(uuid);
+            return citizens.get(uuid).permissions;
         }
         return Set.of();
     }
@@ -99,6 +116,14 @@ public class Town {
 
     public long getMoney() {
         return money;
+    }
+
+    public void personalDeposit(UUID uuid,long amount) {
+        CitizenInfo citizenInfo = citizens.get(uuid);
+        if (citizenInfo != null) {
+            citizenInfo.money +=amount;
+            setDirty();
+        }
     }
 
     public void deposit(long amount) {
@@ -118,6 +143,26 @@ public class Town {
         return remove;
     }
 
+    public void collectTaxes() {
+        for (Map.Entry<UUID,CitizenInfo> entry:citizens.entrySet()) {
+            UUID uuid = entry.getKey();
+            CitizenInfo citizenInfo = entry.getValue();
+            if (taxRate > citizenInfo.money) {
+                money+= citizenInfo.money;
+                citizenInfo.money = 0;
+                ServerPlayer owner = townData.level.getServer().getPlayerList().getPlayer(getOwner());
+                if (owner != null) {
+                    String name = Services.PLATFORM.getLastKnownUserName(uuid);
+                    owner.sendSystemMessage(Component.literal(name+ " has not paid all of their taxes"));
+                }
+            } else {
+                money+=taxRate;
+                citizenInfo.money-=taxRate;
+            }
+        }
+        setDirty();
+    }
+
 
     public void setDirty() {
         townData.setDirty();
@@ -130,6 +175,7 @@ public class Town {
         tag.putLong("money", money);
         tag.put("claimed", saveClaimed());
         tag.put("citizens", saveCitizens());
+        tag.putLong("tax_rate",taxRate);
         return tag;
     }
 
@@ -147,14 +193,9 @@ public class Town {
     //uuids are saved as IntArrayTags
     public ListTag saveCitizens() {
         ListTag listTag = new ListTag();
-        for (Map.Entry<UUID,Set<TownPermission>> entry : citizens.entrySet()) {
-            CompoundTag tag = new CompoundTag();
+        for (Map.Entry<UUID,CitizenInfo> entry : citizens.entrySet()) {
+            CompoundTag tag = entry.getValue().toTag();
             tag.putUUID("uuid",entry.getKey());
-            ListTag permissionTag = new ListTag();
-            for (TownPermission townPermission : entry.getValue()) {
-                permissionTag.add(StringTag.valueOf(townPermission.key()));
-            }
-            tag.put("permissions",permissionTag);
             listTag.add(tag);
         }
         return listTag;
@@ -170,20 +211,19 @@ public class Town {
             claimed.add(new ChunkPos(compoundTag.getInt("x"), compoundTag.getInt("z")));
         }
         loadCitizens(tag.getList("citizens", Tag.TAG_COMPOUND));
+        taxRate = tag.getLong("tax_rate");
     }
 
     public void loadCitizens(ListTag listTag) {
         for (Tag tag1 : listTag) {
             CompoundTag compoundTag = (CompoundTag) tag1;
             UUID uuid = compoundTag.getUUID("uuid");
-            ListTag permissionTag = compoundTag.getList("permissions",Tag.TAG_STRING);
-            Set<TownPermission> permissions = new HashSet<>();
-            for (Tag tag : permissionTag) {
-                String string = tag.getAsString();
-                TownPermission permission = TownPermissions.getPermission(string);
-                permissions.add(permission);
-            }
-            citizens.put(uuid,permissions);
+            CitizenInfo citizenInfo = CitizenInfo.fromTag(compoundTag);
+            citizens.put(uuid,citizenInfo);
         }
+    }
+
+    public long getTaxRate() {
+        return taxRate;
     }
 }

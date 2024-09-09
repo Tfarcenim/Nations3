@@ -21,7 +21,7 @@ public class TownData extends SavedData {
     private List<Nation> nations = new ArrayList<>();
     private Map<String,Nation> nations_by_name = new HashMap<>();
 
-    private final ServerLevel level;
+    final ServerLevel level;
 
     public TownData(ServerLevel level) {
         this.level = level;
@@ -69,8 +69,19 @@ public class TownData extends SavedData {
     public static final int INTERVAL = ServerLevel.TICKS_PER_DAY * 7;
 
     public void tick() {
+        if (level.getDayTime() % ServerLevel.TICKS_PER_DAY == 0) {
+            payPersonalTaxes();
+        }
+
+
         if (level.getDayTime() % INTERVAL == 0) {
             payRent();
+        }
+    }
+
+    public void payPersonalTaxes() {
+        for (Town town : towns) {
+            town.collectTaxes();
         }
     }
 

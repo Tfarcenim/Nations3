@@ -10,6 +10,7 @@ public class TownPermissions {
     private static final Map<String,TownPermission> PERMISSIONS = new HashMap<>();
 
     public static final TownPermission MANAGE_CLAIMS = register("manage_claims");
+    public static final TownPermission MANAGE_PERSONAL_TAX = register("manage_personal_tax");
 
     public static TownPermission register(String name) {
         TownPermission townPermission = new TownPermission(name);

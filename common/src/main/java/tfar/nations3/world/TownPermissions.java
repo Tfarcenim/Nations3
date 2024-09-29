@@ -3,7 +3,6 @@ package tfar.nations3.world;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
 public class TownPermissions {
 
@@ -11,6 +10,7 @@ public class TownPermissions {
 
     public static final TownPermission MANAGE_CLAIMS = register("manage_claims");
     public static final TownPermission MANAGE_PERSONAL_TAX = register("manage_personal_tax");
+    public static final TownPermission MANAGE_CITIZENS = register("manage_members");
 
     public static TownPermission register(String name) {
         TownPermission townPermission = new TownPermission(name);

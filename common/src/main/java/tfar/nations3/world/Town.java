@@ -53,6 +53,11 @@ public class Town {
         setDirty();
     }
 
+    public void removeCitizen(UUID uuid) {
+        citizens.remove(uuid);
+        setDirty();
+    }
+
     public void setOwner(UUID owner) {
         this.owner = owner;
         citizens.put(owner,new CitizenInfo(0,new HashSet<>(TownPermissions.getAllPermissions())));

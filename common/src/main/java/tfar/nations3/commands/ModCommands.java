@@ -44,6 +44,11 @@ public class ModCommands {
                                 .executes(ModCommands::createTownInvite)
                         )
                 )
+                .then(Commands.literal("kick")
+                        .then(Commands.argument("players", EntityArgument.players())
+                                .executes(ModCommands::kickCitizens)
+                        )
+                )
                 .then(Commands.literal("clear_claims")
                         .executes(ModCommands::removeAllOwnClaims)
                         .then(Commands.argument("name", StringArgumentType.string())
@@ -148,14 +153,14 @@ public class ModCommands {
     public static int setTaxRate(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
         CommandSourceStack commandSourceStack = ctx.getSource();
         ServerPlayer player = commandSourceStack.getPlayerOrException();
-        long taxRate = LongArgumentType.getLong(ctx,"tax_rate");
+        long taxRate = LongArgumentType.getLong(ctx, "tax_rate");
         TownData townData = TownData.getInstance(commandSourceStack.getLevel());
         if (townData != null) {
             Town town = townData.getTownByPlayer(player.getUUID());
             if (town != null) {
-                if (town.checkPermission(player.getUUID(),TownPermissions.MANAGE_PERSONAL_TAX)) {
+                if (town.checkPermission(player.getUUID(), TownPermissions.MANAGE_PERSONAL_TAX)) {
                     town.setTaxRate(taxRate);
-                    commandSourceStack.sendSuccess(() -> Component.literal("Set town tax rate to "+taxRate),false);
+                    commandSourceStack.sendSuccess(() -> Component.literal("Set town tax rate to " + taxRate), false);
                     return 1;
                 } else {
                     commandSourceStack.sendFailure(TextComponents.INSUFFICIENT_PERMISSION);
@@ -186,35 +191,34 @@ public class ModCommands {
     public static int createTownInvite(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
         CommandSourceStack commandSourceStack = ctx.getSource();
         ServerPlayer player = commandSourceStack.getPlayerOrException();
-        Collection<ServerPlayer> players = EntityArgument.getPlayers(ctx,"players");
+        Collection<ServerPlayer> players = EntityArgument.getPlayers(ctx, "players");
         TownData townData = TownData.getInstance(commandSourceStack.getLevel());
         if (townData != null) {
             Town town = townData.getTownByPlayer(player.getUUID());
-            if (town != null && town.isOwner(player.getUUID())) {
-//                commandSourceStack.sendSuccess(() -> Component.literal("Successfully cleared all claims"), false);
+            if (town != null && town.checkPermission(player.getUUID(), TownPermissions.MANAGE_CITIZENS)) {
                 for (ServerPlayer otherPlayer : players) {
-                    otherPlayer.sendSystemMessage(Component.literal("You have been invited to join town "+town.getName()+" ")
+                    otherPlayer.sendSystemMessage(Component.literal("You have been invited to join town " + town.getName() + " ")
                             .append(Component.literal("[Accept]").withStyle(Style.EMPTY.applyFormat(ChatFormatting.GREEN)
-                                    .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,Component.literal("Join "+town.getName())))
-                                    .withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND,"/town accept_invite "+town.getName())))));
+                                    .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Component.literal("Join " + town.getName())))
+                                    .withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/town accept_invite " + town.getName())))));
                     town.addInvite(otherPlayer.getUUID());
                 }
                 return 1;
             }
         }
-        commandSourceStack.sendFailure(TextComponents.NOT_TOWN_OWNER);
+        commandSourceStack.sendFailure(TextComponents.INSUFFICIENT_PERMISSION);
         return 0;
     }
 
     public static int acceptTownInvite(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
         CommandSourceStack commandSourceStack = ctx.getSource();
         ServerPlayer player = commandSourceStack.getPlayerOrException();
-        String townName = StringArgumentType.getString(ctx,"town");
+        String townName = StringArgumentType.getString(ctx, "town");
         TownData townData = TownData.getInstance(commandSourceStack.getLevel());
         if (townData != null) {
             Town town = townData.getTownByPlayer(player.getUUID());
             if (town != null) {
-                commandSourceStack.sendFailure(Component.literal("Already in town "+town.getName()));
+                commandSourceStack.sendFailure(Component.literal("Already in town " + town.getName()));
                 return 0;
             } else {
                 Town invitedTown = townData.getTownByName(townName);
@@ -222,7 +226,7 @@ public class ModCommands {
                     if (invitedTown.hasInvite(player.getUUID())) {
                         invitedTown.addCitizen(player.getUUID());
                         invitedTown.removeInvite(player.getUUID());
-                        commandSourceStack.sendSuccess(() -> Component.literal("You are now part of town " + invitedTown.getName()),false);
+                        commandSourceStack.sendSuccess(() -> Component.literal("You are now part of town " + invitedTown.getName()), false);
                         return 1;
                     } else {
                         commandSourceStack.sendFailure(Component.literal("Invalid invite"));
@@ -231,6 +235,29 @@ public class ModCommands {
                 }
             }
         }
+        return 0;
+    }
+
+    public static int kickCitizens(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+        CommandSourceStack commandSourceStack = ctx.getSource();
+        ServerPlayer player = commandSourceStack.getPlayerOrException();
+        Collection<ServerPlayer> players = EntityArgument.getPlayers(ctx, "players");
+        TownData townData = TownData.getInstance(commandSourceStack.getLevel());
+        if (townData != null) {
+            Town town = townData.getTownByPlayer(player.getUUID());
+            if (town != null && town.checkPermission(player.getUUID(), TownPermissions.MANAGE_CITIZENS)) {
+                for (ServerPlayer otherPlayer : players) {
+                    if (player != otherPlayer) {
+                        if (town.containsCitizen(otherPlayer.getUUID())) {
+                            otherPlayer.sendSystemMessage(Component.literal("You have been kicked from " + town.getName()));
+                            town.removeCitizen(otherPlayer.getUUID());
+                        }
+                    }
+                }
+                return 1;
+            }
+        }
+        commandSourceStack.sendFailure(TextComponents.INSUFFICIENT_PERMISSION);
         return 0;
     }
 
@@ -568,7 +595,7 @@ public class ModCommands {
         list.add(Component.literal("Name: " + town.getName()));
         list.add(Component.literal("Owner: " + Services.PLATFORM.getLastKnownUserName(town.getOwner())));
         list.add(Component.literal("Money: " + town.getMoney()));
-        list.add(Component.literal("Tax Rate: "+town.getTaxRate()));
+        list.add(Component.literal("Tax Rate: " + town.getTaxRate()));
         list.add(Component.literal("Citizens").withStyle(ChatFormatting.UNDERLINE));
         for (UUID uuid : town.getCitizens()) {
             list.add(Component.literal("Citizen: " + Services.PLATFORM.getLastKnownUserName(uuid)));

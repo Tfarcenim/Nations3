@@ -18,6 +18,7 @@ public class Town {
     private final Set<ChunkPos> claimed = new HashSet<>();
     private long money;
     private long taxRate;
+    private final Set<UUID> invited = new HashSet<>();
 
     public Town(TownData townData) {
         this.townData = townData;
@@ -78,7 +79,7 @@ public class Town {
     }
 
     public boolean checkPermission(UUID uuid,TownPermission permission) {
-        if (Objects.equals(owner,uuid)) return true;
+        if (isOwner(uuid)) return true;
         return citizens.containsKey(uuid) && citizens.get(uuid).permissions.contains(permission);
     }
 
@@ -226,4 +227,17 @@ public class Town {
     public long getTaxRate() {
         return taxRate;
     }
+
+    public void addInvite(UUID uuid) {
+        invited.add(uuid);
+    }
+
+    public boolean hasInvite(UUID uuid) {
+        return invited.contains(uuid);
+    }
+
+    public void removeInvite(UUID uuid) {
+        invited.remove(uuid);
+    }
+
 }

@@ -9,8 +9,12 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.commands.arguments.GameProfileArgument;
+import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.HoverEvent;
+import net.minecraft.network.chat.Style;
 import net.minecraft.server.level.ServerPlayer;
 import tfar.nations3.TextComponents;
 import tfar.nations3.platform.Services;
@@ -29,6 +33,16 @@ public class ModCommands {
                 )
                 .then(Commands.literal("tax_rate")
                         .then(Commands.argument("tax_rate", LongArgumentType.longArg(0)).executes(ModCommands::setTaxRate))
+                )
+                .then(Commands.literal("accept_invite")
+                        .then(Commands.argument("town", StringArgumentType.string())
+                                .executes(ModCommands::acceptTownInvite)
+                        )
+                )
+                .then(Commands.literal("invite")
+                        .then(Commands.argument("players", EntityArgument.players())
+                                .executes(ModCommands::createTownInvite)
+                        )
                 )
                 .then(Commands.literal("clear_claims")
                         .executes(ModCommands::removeAllOwnClaims)
@@ -79,7 +93,7 @@ public class ModCommands {
                         )
                         .then(Commands.literal("check")
                                 .then(Commands.argument("player", GameProfileArgument.gameProfile())
-                                        .executes(ModCommands::checkPermissions)
+                                        .executes(ModCommands::checkTownPermissions)
                                 )
                         )
                 )
@@ -159,13 +173,64 @@ public class ModCommands {
         TownData townData = TownData.getInstance(player.serverLevel());
         if (townData != null) {
             Town town = townData.getTownByPlayer(player.getUUID());
-            if (town != null && town.getOwner().equals(player.getUUID())) {
+            if (town != null && town.isOwner(player.getUUID())) {
                 commandSourceStack.sendSuccess(() -> Component.literal("Successfully cleared all claims"), false);
                 townData.clearAllClaims(town);
                 return 1;
             }
         }
         commandSourceStack.sendFailure(TextComponents.NOT_TOWN_OWNER);
+        return 0;
+    }
+
+    public static int createTownInvite(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+        CommandSourceStack commandSourceStack = ctx.getSource();
+        ServerPlayer player = commandSourceStack.getPlayerOrException();
+        Collection<ServerPlayer> players = EntityArgument.getPlayers(ctx,"players");
+        TownData townData = TownData.getInstance(commandSourceStack.getLevel());
+        if (townData != null) {
+            Town town = townData.getTownByPlayer(player.getUUID());
+            if (town != null && town.isOwner(player.getUUID())) {
+//                commandSourceStack.sendSuccess(() -> Component.literal("Successfully cleared all claims"), false);
+                for (ServerPlayer otherPlayer : players) {
+                    otherPlayer.sendSystemMessage(Component.literal("You have been invited to join town "+town.getName()+" ")
+                            .append(Component.literal("[Accept]").withStyle(Style.EMPTY.applyFormat(ChatFormatting.GREEN)
+                                    .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,Component.literal("Join "+town.getName())))
+                                    .withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND,"/town accept_invite "+town.getName())))));
+                    town.addInvite(otherPlayer.getUUID());
+                }
+                return 1;
+            }
+        }
+        commandSourceStack.sendFailure(TextComponents.NOT_TOWN_OWNER);
+        return 0;
+    }
+
+    public static int acceptTownInvite(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+        CommandSourceStack commandSourceStack = ctx.getSource();
+        ServerPlayer player = commandSourceStack.getPlayerOrException();
+        String townName = StringArgumentType.getString(ctx,"town");
+        TownData townData = TownData.getInstance(commandSourceStack.getLevel());
+        if (townData != null) {
+            Town town = townData.getTownByPlayer(player.getUUID());
+            if (town != null) {
+                commandSourceStack.sendFailure(Component.literal("Already in town "+town.getName()));
+                return 0;
+            } else {
+                Town invitedTown = townData.getTownByName(townName);
+                if (invitedTown != null) {
+                    if (invitedTown.hasInvite(player.getUUID())) {
+                        invitedTown.addCitizen(player.getUUID());
+                        invitedTown.removeInvite(player.getUUID());
+                        commandSourceStack.sendSuccess(() -> Component.literal("You are now part of town " + invitedTown.getName()),false);
+                        return 1;
+                    } else {
+                        commandSourceStack.sendFailure(Component.literal("Invalid invite"));
+                        return 0;
+                    }
+                }
+            }
+        }
         return 0;
     }
 
@@ -311,7 +376,7 @@ public class ModCommands {
         return 0;
     }
 
-    public static int checkPermissions(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+    public static int checkTownPermissions(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
         CommandSourceStack commandSourceStack = ctx.getSource();
         Collection<GameProfile> gameProfiles = GameProfileArgument.getGameProfiles(ctx, "player");
 

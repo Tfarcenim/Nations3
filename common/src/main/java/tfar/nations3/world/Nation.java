@@ -5,9 +5,7 @@ import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 public class Nation {
 
@@ -16,6 +14,7 @@ public class Nation {
     private String name;
     private final List<Town> towns = new ArrayList<>();
     private long money;
+    private final Set<String> invited = new HashSet<>();
 
     public Nation(TownData data) {
         this.data = data;
@@ -35,6 +34,10 @@ public class Nation {
     public void deposit(long amount) {
         money+= amount;
         setDirty();
+    }
+
+    public boolean isOwner(UUID uuid) {
+        return owner.equals(uuid);
     }
 
     public boolean addTown(Town town) {
@@ -99,4 +102,19 @@ public class Nation {
         }
         money = tag.getLong("money");
     }
+
+    public void addInvite(String name) {
+        invited.add(name);
+    }
+
+
+    public boolean hasInvite(String name) {
+        return invited.contains(name);
+    }
+
+    public void removeInvite(String name) {
+        invited.remove(name);
+    }
+
+
 }

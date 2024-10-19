@@ -6,6 +6,7 @@ import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.server.level.ServerLevel;
 import tfar.nations3.world.TownData;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 

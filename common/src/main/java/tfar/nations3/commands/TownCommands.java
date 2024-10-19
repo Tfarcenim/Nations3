@@ -52,6 +52,9 @@ public class TownCommands {
                                 .executes(TownCommands::kickCitizens)
                         )
                 )
+                .then(Commands.literal("leave")
+                        .executes(TownCommands::leaveTown)
+                )
                 .then(Commands.literal("clear_claims")
                         .executes(TownCommands::removeAllOwnClaims)
                         .then(Commands.argument("name", StringArgumentType.string())
@@ -234,6 +237,27 @@ public class TownCommands {
             }
         }
         commandSourceStack.sendFailure(TextComponents.INSUFFICIENT_PERMISSION);
+        return 0;
+    }
+
+    public static int leaveTown(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+        CommandSourceStack commandSourceStack = ctx.getSource();
+        ServerPlayer player = commandSourceStack.getPlayerOrException();
+        TownData townData = TownData.getInstance(commandSourceStack.getLevel());
+        if (townData != null) {
+            Town town = townData.getTownByPlayer(player.getUUID());
+            if (town != null) {
+                if (town.isOwner(player.getUUID())) {
+                    commandSourceStack.sendFailure(Component.literal("Cannot leave town as the owner"));
+                    return 0;
+                } else {
+                    player.sendSystemMessage(Component.literal("You have left " + town.getName()));
+                    town.removeCitizen(player.getUUID());
+                }
+                return 1;
+            }
+        }
+        commandSourceStack.sendFailure(TextComponents.NOT_IN_TOWN);
         return 0;
     }
 

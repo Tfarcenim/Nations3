@@ -60,8 +60,115 @@ public class ModCommands {
                                 .executes(ModCommands::acceptNationInvite)
                         )
                 )
+                .then(Commands.literal("alliance_invite")
+                        .then(Commands.argument("nation",StringArgumentType.string())
+                                .suggests(Suggestions.ALL_NATIONS)
+                                .executes(ModCommands::inviteAlliance)
+                        )
+                )
+                .then(Commands.literal("accept_alliance_invite")
+                        .then(Commands.argument("nation",StringArgumentType.string())
+                                .executes(ModCommands::acceptAllianceInvite)
+                        )
+                )
         );
     }
+    public static int inviteAlliance(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+        CommandSourceStack commandSourceStack = ctx.getSource();
+        ServerPlayer player = commandSourceStack.getPlayerOrException();
+        String nationName = StringArgumentType.getString(ctx, "nation");
+        TownData townData = TownData.getInstance(commandSourceStack.getLevel());
+        if (townData != null) {
+            Nation ownNation = townData.getNationByPlayer(player.getUUID());
+
+            if (ownNation == null) {
+                commandSourceStack.sendFailure(TextComponents.NOT_IN_NATION);
+                return 0;
+            }
+
+            if (!ownNation.isOwner(player.getUUID())) {
+                commandSourceStack.sendFailure(TextComponents.NOT_NATION_OWNER);
+                return 0;
+            }
+
+            Nation invited = townData.getNationByName(nationName);
+            if (invited == null) {
+                commandSourceStack.sendFailure(Component.literal("Nation with name "+nationName+" not found"));
+                return 0;
+            }
+            if (invited == ownNation) {
+                commandSourceStack.sendFailure(Component.literal("Can't ally with own nation"));
+                return 0;
+            }
+
+            UUID otherOwner = invited.getOwner();
+            MinecraftServer server = commandSourceStack.getServer();
+            ServerPlayer otherPlayer = server.getPlayerList().getPlayer(otherOwner);
+            if (otherPlayer != null) {
+                otherPlayer.sendSystemMessage(Component.literal("Your nation has been invited to ally with nation " + ownNation.getName() + " ")
+                        .append(Component.literal("[Accept]").withStyle(Style.EMPTY.applyFormat(ChatFormatting.GREEN)
+                                .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Component.literal("Join " + ownNation.getName())))
+                                .withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/nation accept_alliance_invite " + ownNation.getName())))));
+                ownNation.addInvite(nationName);
+
+                commandSourceStack.sendSuccess(() -> Component.literal("Invited nation "+nationName+" for an alliance"),false);
+
+                return 1;
+            } else {
+                commandSourceStack.sendFailure(Component.literal("Nation owner is not online"));
+                return 0;
+            }
+
+        }
+        return 1;
+    }
+
+    public static int acceptAllianceInvite(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+        CommandSourceStack commandSourceStack = ctx.getSource();
+        ServerPlayer player = commandSourceStack.getPlayerOrException();
+        String nationName = StringArgumentType.getString(ctx, "nation");
+        TownData townData = TownData.getInstance(commandSourceStack.getLevel());
+        if (townData != null) {
+            Nation ownNation = townData.getNationByPlayer(player.getUUID());
+
+            if (ownNation == null) {
+                commandSourceStack.sendFailure(TextComponents.NOT_IN_NATION);
+                return 0;
+            }
+
+            if (!ownNation.isOwner(player.getUUID())) {
+                commandSourceStack.sendFailure(TextComponents.NOT_NATION_OWNER);
+                return 0;
+            }
+
+            Nation invited = townData.getNationByName(nationName);
+            if (invited == null) {
+                commandSourceStack.sendFailure(Component.literal("Nation with name "+nationName+" not found"));
+                return 0;
+            }
+            if (invited == ownNation) {
+                commandSourceStack.sendFailure(Component.literal("Can't ally with own nation"));
+                return 0;
+            }
+                if (invited.hasAllianceInvite(ownNation.getName())) {
+                    invited.addAlliance(ownNation);
+                    invited.removeAllianceInvite(ownNation.getName());
+                    commandSourceStack.sendSuccess(() -> Component.literal("You are now allied with nation " + invited.getName()), false);
+
+                    ServerPlayer hostPlayer = commandSourceStack.getServer().getPlayerList().getPlayer(invited.getOwner());
+                    if (hostPlayer != null) {
+                        player.sendSystemMessage(Component.literal(ownNation.getName() + " has accepted your alliance"));
+                    }
+
+                    return 1;
+                } else {
+                    commandSourceStack.sendFailure(Component.literal("Invalid invite"));
+                    return 0;
+            }
+        }
+        return 0;
+    }
+
 
     public static int createNationInvite(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
         CommandSourceStack commandSourceStack = ctx.getSource();

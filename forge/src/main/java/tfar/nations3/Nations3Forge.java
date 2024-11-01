@@ -4,9 +4,15 @@ import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.level.SleepFinishedTimeEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -22,6 +28,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import tfar.nations3.client.ModClientForge;
 import tfar.nations3.commands.ModCommands;
 import tfar.nations3.datagen.ModDatagen;
+import tfar.nations3.world.TownData;
 
 import java.util.HashMap;
 import java.util.List;
@@ -43,6 +50,7 @@ public class Nations3Forge {
         MinecraftForge.EVENT_BUS.addListener(this::commands);
         MinecraftForge.EVENT_BUS.addListener(this::levelTick);
         MinecraftForge.EVENT_BUS.addListener(EventPriority.LOW, this::afterSleep);
+        MinecraftForge.EVENT_BUS.addListener(this::death);
         if (FMLEnvironment.dist.isClient()) {
             ModClientForge.init(bus);
         }
@@ -52,6 +60,18 @@ public class Nations3Forge {
     
         // Use Forge to bootstrap the Common mod.
         Nations3.init();
+    }
+
+    void death(LivingDeathEvent event) {
+        LivingEntity living = event.getEntity();
+        DamageSource source = event.getSource();
+        TownData townData = TownData.getOrCreateDefaultInstance(living.getServer());
+        if (living instanceof ServerPlayer player) {
+            Entity killer = source.getEntity();
+            if (killer instanceof ServerPlayer killerPlayer) {
+                townData.trackKill(killerPlayer,player);
+            }
+        }
     }
 
     public void afterSleep(SleepFinishedTimeEvent event) {

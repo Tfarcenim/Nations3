@@ -10,6 +10,7 @@ public class TextComponents {
     public static final MutableComponent NOT_TOWN_OWNER = Component.literal("You are not the town owner");
     public static final MutableComponent NOT_NATION_OWNER = Component.literal("You are not the nation owner");
     public static final MutableComponent INSUFFICIENT_PERMISSION = Component.literal("You do not have permission to perform this action");
+    public static final MutableComponent INSUFFICIENT_FUNDS_FOR_REBELLION = Component.literal("You do not have sufficient funds to start a rebellion");
 
 
 }

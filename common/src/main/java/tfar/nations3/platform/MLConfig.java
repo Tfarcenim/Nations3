@@ -8,4 +8,7 @@ public interface MLConfig {
     long getRent();
     int getNationThreshold();
     double getNationTaxRate();
+    long rebellionMoneyRequirement();
+    double requiredOnlineForRebellion();
+    double requiredToAgreeForRebellion();
 }

@@ -5,6 +5,7 @@ import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.saveddata.SavedData;
 import org.jetbrains.annotations.Nullable;
@@ -22,6 +23,7 @@ public class TownData extends SavedData {
     private Map<String,Nation> nations_by_name = new HashMap<>();
 
     final ServerLevel level;
+    final List<War> activeWars = new ArrayList<>();
 
     public TownData(ServerLevel level) {
         this.level = level;
@@ -66,6 +68,11 @@ public class TownData extends SavedData {
         }
     }
 
+    public void addWar(Nation attacker,Nation defender,Set<ChunkPos> contested) {
+        War war = new War(attacker, defender, contested);
+        activeWars.add(war);
+    }
+
     public static final int INTERVAL = ServerLevel.TICKS_PER_DAY * 7;
 
     public void tick() {
@@ -77,6 +84,14 @@ public class TownData extends SavedData {
         if (level.getDayTime() % INTERVAL == 0) {
             payRent();
         }
+        for (War war : activeWars) {
+            if (war.tick()) {
+                war.finished = true;
+                Nation winner = war.getWinner();
+
+            }
+        }
+        activeWars.removeIf(war -> war.finished);
     }
 
     public void payPersonalTaxes() {
@@ -107,6 +122,12 @@ public class TownData extends SavedData {
                     }
                 }
             }
+        }
+    }
+
+    public void trackKill(ServerPlayer attacker,ServerPlayer killed) {
+        for (War war : activeWars) {
+            war.trackKill(attacker,killed);
         }
     }
 

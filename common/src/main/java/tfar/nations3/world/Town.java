@@ -1,7 +1,9 @@
 package tfar.nations3.world;
 
+import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.*;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.ChunkPos;
 import org.jetbrains.annotations.Nullable;
@@ -132,6 +134,10 @@ public class Town {
         }
     }
 
+    public TownData getTownData() {
+        return townData;
+    }
+
     public void deposit(long amount) {
         money += amount;
         setDirty();
@@ -167,6 +173,40 @@ public class Town {
             }
         }
         setDirty();
+    }
+
+    public double getFractionOnline() {
+        MinecraftServer server = townData.level.getServer();
+        int total = citizens.size();
+        int online = citizens.keySet().stream().filter(uuid -> server.getPlayerList().getPlayer(uuid) != null).toList().size();
+        return (double)online / total;
+    }
+
+    public List<Component> buildTownInfo() {
+        List<Component> list = new ArrayList<>();
+        list.add(Component.literal("Town Info").withStyle(ChatFormatting.UNDERLINE));
+        list.add(Component.literal("Name: " + this.getName()));
+        list.add(Component.literal("Owner: " + Services.PLATFORM.getLastKnownUserName(getOwner())));
+        list.add(Component.literal("Money: " + this.getMoney()));
+        list.add(Component.literal("Tax Rate: " + this.getTaxRate()));
+        list.add(Component.literal("Citizens").withStyle(ChatFormatting.UNDERLINE));
+        for (UUID uuid : this.getCitizens()) {
+            list.add(Component.literal("Citizen: " + Services.PLATFORM.getLastKnownUserName(uuid)));
+        }
+        list.add(Component.literal("Chunks claimed: " + this.getClaimed().size()));
+        list.add(Component.literal((getFractionOnline() * 100)+"% online"));
+        return list;
+    }
+
+    public void sendToAll(Component component,boolean excludeOwner) {
+        MinecraftServer server = townData.level.getServer();
+        for (UUID uuid : citizens.keySet()) {
+            if (excludeOwner && isOwner(uuid)) continue;
+            ServerPlayer player = server.getPlayerList().getPlayer(uuid);
+            if (player!=null) {
+                player.sendSystemMessage(component,false);
+            }
+        }
     }
 
 

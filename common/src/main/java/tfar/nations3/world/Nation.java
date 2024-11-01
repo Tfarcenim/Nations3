@@ -4,6 +4,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
@@ -16,6 +17,8 @@ public class Nation {
     private long money;
     private final Set<String> invited = new HashSet<>();
     private final Set<String> allianceInvited = new HashSet<>();
+
+    private @Nullable Rebellion rebellion;
 
     private final Set<Nation> allied = new HashSet<>();
 
@@ -49,6 +52,10 @@ public class Nation {
         return true;
     }
 
+    public boolean containsCitizen(UUID uuid) {
+        return towns.stream().anyMatch(town -> town.containsCitizen(uuid));
+    }
+
     public void addAlliance(Nation other) {
         allied.add(other);
         setDirty();
@@ -80,6 +87,40 @@ public class Nation {
 
     public void setDirty() {
         data.setDirty();
+    }
+
+
+    public void addInvite(String name) {
+        invited.add(name);
+    }
+
+
+    public boolean hasInvite(String name) {
+        return invited.contains(name);
+    }
+
+    public void removeInvite(String name) {
+        invited.remove(name);
+    }
+
+    public boolean addAllianceInvite(String name) {
+        return allianceInvited.add(name);
+    }
+
+    public boolean hasAllianceInvite(String name) {
+        return allianceInvited.contains(name);
+    }
+
+    public void removeAllianceInvite(String name) {
+        allianceInvited.remove(name);
+    }
+
+    public void setRebellion(Rebellion rebellion) {
+        this.rebellion = rebellion;
+    }
+
+    public Rebellion getRebellion() {
+        return rebellion;
     }
 
     public CompoundTag save() {
@@ -129,29 +170,5 @@ public class Nation {
         }
     }
 
-    public void addInvite(String name) {
-        invited.add(name);
-    }
-
-
-    public boolean hasInvite(String name) {
-        return invited.contains(name);
-    }
-
-    public void removeInvite(String name) {
-        invited.remove(name);
-    }
-
-    public boolean addAllianceInvite(String name) {
-        return allianceInvited.add(name);
-    }
-
-    public boolean hasAllianceInvite(String name) {
-        return allianceInvited.contains(name);
-    }
-
-    public void removeAllianceInvite(String name) {
-        allianceInvited.remove(name);
-    }
 
 }

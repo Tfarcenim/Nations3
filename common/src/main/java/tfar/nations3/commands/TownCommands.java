@@ -16,12 +16,10 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.ChunkPos;
 import tfar.nations3.TextComponents;
 import tfar.nations3.platform.Services;
-import tfar.nations3.world.Town;
-import tfar.nations3.world.TownData;
-import tfar.nations3.world.TownPermission;
-import tfar.nations3.world.TownPermissions;
+import tfar.nations3.world.*;
 
 import java.util.*;
 
@@ -33,6 +31,15 @@ public class TownCommands {
                         .then(Commands.argument("name", StringArgumentType.string())
                                 .executes(TownCommands::createTown)
                         )
+                )
+                .then(Commands.literal("create_rebellion")
+                        .executes(TownCommands::createRebellion)
+                )
+                .then(Commands.literal("join_rebellion")
+                        .executes(TownCommands::joinRebellion)
+                )
+                .then(Commands.literal("start_rebellion")
+                        .executes(TownCommands::startRebellion)
                 )
                 .then(Commands.literal("tax_rate")
                         .then(Commands.argument("tax_rate", LongArgumentType.longArg(0)).executes(TownCommands::setTaxRate))
@@ -111,6 +118,139 @@ public class TownCommands {
         );
     }
 
+    static int createRebellion(CommandContext<CommandSourceStack>ctx) throws CommandSyntaxException {
+        CommandSourceStack commandSourceStack = ctx.getSource();
+        ServerPlayer player = commandSourceStack.getPlayerOrException();
+        TownData townData = TownData.getInstance(player.serverLevel());
+        if (townData!= null) {
+            Town town = townData.getTownByPlayer(player.getUUID());
+            if (town == null) {
+                commandSourceStack.sendFailure(TextComponents.NOT_IN_TOWN);
+                return 0;
+            }
+            Nation nation = townData.getNationByTown(town);
+            if (nation == null) {
+                commandSourceStack.sendFailure(TextComponents.NOT_IN_NATION);
+                return 0;
+            }
+
+            if (nation.isOwner(player.getUUID())) {
+                commandSourceStack.sendFailure(Component.literal("Nation owner can't start rebellion"));
+                return 0;
+            }
+
+            if (!town.isOwner(player.getUUID())) {
+                commandSourceStack.sendFailure(TextComponents.INSUFFICIENT_PERMISSION);
+                return 0;
+            }
+
+
+
+            if (town.getMoney() < Services.PLATFORM.getConfig().rebellionMoneyRequirement()) {
+                commandSourceStack.sendFailure(TextComponents.INSUFFICIENT_FUNDS_FOR_REBELLION);
+                return 0;
+            }
+
+            if (town.getFractionOnline() < Services.PLATFORM.getConfig().requiredOnlineForRebellion()) {
+                commandSourceStack.sendFailure(Component.literal("Not enough town members online"));
+                return 0;
+            }
+
+            Rebellion rebellion = new Rebellion(town);
+            nation.setRebellion(rebellion);
+
+            Component rebellionInvite = Component.literal("Participate in rebellion? " + town.getName() + " ")
+                    .append(Component.literal("[Accept]").withStyle(Style.EMPTY.applyFormat(ChatFormatting.GREEN)
+                            .withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/town join_rebellion " + town.getName()))));
+
+            town.sendToAll(rebellionInvite,true);
+
+            return 1;
+
+        }
+        commandSourceStack.sendFailure(TextComponents.NOT_IN_TOWN);
+        return 0;
+    }
+
+    public static int joinRebellion(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+        CommandSourceStack commandSourceStack = ctx.getSource();
+        ServerPlayer player = commandSourceStack.getPlayerOrException();
+        TownData townData = TownData.getInstance(player.serverLevel());
+        if (townData!= null) {
+            Town town = townData.getTownByPlayer(player.getUUID());
+            if (town == null) {
+                commandSourceStack.sendFailure(TextComponents.NOT_IN_TOWN);
+                return 0;
+            }
+
+            Nation nation = townData.getNationByTown(town);
+            if (nation == null) {
+                commandSourceStack.sendFailure(TextComponents.NOT_IN_NATION);
+                return 0;
+            }
+
+            Rebellion rebellion = nation.getRebellion();
+
+            if (rebellion == null) {
+                commandSourceStack.sendFailure(Component.literal("No active rebellion in nation"));
+                return 0;
+            }
+
+            if (town == rebellion.getStarter()) {
+                rebellion.addVote(player.getUUID());
+                return 1;
+            }
+
+        }
+        commandSourceStack.sendFailure(TextComponents.NOT_IN_TOWN);
+        return 0;
+    }
+
+    public static int startRebellion(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+        CommandSourceStack commandSourceStack = ctx.getSource();
+        ServerPlayer player = commandSourceStack.getPlayerOrException();
+        TownData townData = TownData.getInstance(player.serverLevel());
+        if (townData!= null) {
+            Town town = townData.getTownByPlayer(player.getUUID());
+            if (town == null) {
+                commandSourceStack.sendFailure(TextComponents.NOT_IN_TOWN);
+                return 0;
+            }
+
+            if (!town.isOwner(player.getUUID())) {
+                commandSourceStack.sendFailure(TextComponents.INSUFFICIENT_PERMISSION);
+                return 0;
+            }
+
+            Nation nation = townData.getNationByTown(town);
+            if (nation == null) {
+                commandSourceStack.sendFailure(TextComponents.NOT_IN_NATION);
+                return 0;
+            }
+
+
+            Rebellion rebellion = nation.getRebellion();
+
+            if (rebellion == null) {
+                commandSourceStack.sendFailure(Component.literal("No active rebellion in nation"));
+                return 0;
+            }
+
+            if (town == rebellion.getStarter()) {
+                if (rebellion.getApproval() >= Services.PLATFORM.getConfig().requiredToAgreeForRebellion())
+                {rebellion.activate();} else {
+                    commandSourceStack.sendFailure(Component.literal("Not enough approval for rebellion, current: "+rebellion.getApproval()+", required: "+
+                            Services.PLATFORM.getConfig().requiredToAgreeForRebellion()));
+                }
+
+                return 1;
+            }
+
+        }
+        commandSourceStack.sendFailure(TextComponents.NOT_IN_TOWN);
+        return 0;
+    }
+
     public static int createTown(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
         String name = StringArgumentType.getString(ctx, "name");
         CommandSourceStack commandSourceStack = ctx.getSource();
@@ -163,7 +303,7 @@ public class TownCommands {
                 return 1;
             }
         }
-        commandSourceStack.sendFailure(TextComponents.NOT_TOWN_OWNER);
+        commandSourceStack.sendFailure(TextComponents.INSUFFICIENT_PERMISSION);
         return 0;
     }
 
@@ -485,7 +625,7 @@ public class TownCommands {
         if (townData != null) {
             Town town = townData.getTownByName(name);
             if (town != null) {
-                List<Component> info = buildTownInfo(town);
+                List<Component> info = town.buildTownInfo();
                 for (Component component : info) {
                     commandSourceStack.sendSuccess(() -> component, false);
                 }
@@ -503,7 +643,7 @@ public class TownCommands {
         if (townData != null) {
             Town town = townData.getTownByPlayer(player.getUUID());
             if (town != null) {
-                List<Component> info = buildTownInfo(town);
+                List<Component> info = town.buildTownInfo();
                 for (Component component : info) {
                     commandSourceStack.sendSuccess(() -> component, false);
                 }
@@ -514,19 +654,5 @@ public class TownCommands {
         return 0;
     }
 
-    protected static List<Component> buildTownInfo(Town town) {
-        List<Component> list = new ArrayList<>();
-        list.add(Component.literal("Town Info").withStyle(ChatFormatting.UNDERLINE));
-        list.add(Component.literal("Name: " + town.getName()));
-        list.add(Component.literal("Owner: " + Services.PLATFORM.getLastKnownUserName(town.getOwner())));
-        list.add(Component.literal("Money: " + town.getMoney()));
-        list.add(Component.literal("Tax Rate: " + town.getTaxRate()));
-        list.add(Component.literal("Citizens").withStyle(ChatFormatting.UNDERLINE));
-        for (UUID uuid : town.getCitizens()) {
-            list.add(Component.literal("Citizen: " + Services.PLATFORM.getLastKnownUserName(uuid)));
-        }
-        list.add(Component.literal("Chunks claimed: " + town.getClaimed().size()));
 
-        return list;
-    }
 }

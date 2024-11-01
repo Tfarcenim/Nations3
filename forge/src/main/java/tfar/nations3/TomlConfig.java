@@ -46,23 +46,44 @@ public class TomlConfig implements MLConfig {
         return Server.nation_tax_rate.get();
     }
 
+    @Override
+    public long rebellionMoneyRequirement() {
+        return Server.rebellion_money_requirement.get();
+    }
+
+    @Override
+    public double requiredOnlineForRebellion() {
+        return Server.fraction_required_online_for_rebellion.get();
+    }
+
+    @Override
+    public double requiredToAgreeForRebellion() {
+        return Server.fraction_required_to_start_rebellion.get();
+    }
+
     public static class Server {
         public static ForgeConfigSpec.LongValue rent;
+        public static ForgeConfigSpec.LongValue rebellion_money_requirement;
         public static ForgeConfigSpec.IntValue nation_threshold;
         public static ForgeConfigSpec.ConfigValue<List<? extends String>> deposit_values;
         public static ForgeConfigSpec.DoubleValue nation_tax_rate;
         public static Object2LongMap<Item> cache = new Object2LongOpenHashMap<>();
+        public static ForgeConfigSpec.DoubleValue fraction_required_online_for_rebellion;
+        public static ForgeConfigSpec.DoubleValue fraction_required_to_start_rebellion;
 
 
         public Server(ForgeConfigSpec.Builder builder) {
             builder.push("general");
             rent = builder.defineInRange("rent",200,0,1000000000L);
+            rebellion_money_requirement = builder.defineInRange("rebellion_money_requirement",10,0,1000000000L);
             nation_threshold = builder.defineInRange("nation_threshold",5,1,1000);
             deposit_values = builder
                     .comment("Deposit values")
                     .defineList("deposit_values",() -> defaults, String.class::isInstance);
 
             nation_tax_rate = builder.defineInRange("nation_tax_rate",.025,0,1000);
+            fraction_required_online_for_rebellion = builder.defineInRange("fraction_required_online_for_rebellion",.5,0,1);
+            fraction_required_to_start_rebellion = builder.defineInRange("fraction_required_to_start_rebellion",.25,0,1);
 
             builder.pop();
         }

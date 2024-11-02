@@ -87,8 +87,10 @@ public class TownData extends SavedData {
         for (War war : activeWars) {
             if (war.tick()) {
                 war.finished = true;
+                Nation loser = war.getLoser();
                 Nation winner = war.getWinner();
-
+                winner.getClaimed().addAll(war.contested);
+                loser.deepUnclaim(war.contested);
             }
         }
         activeWars.removeIf(war -> war.finished);
@@ -148,10 +150,16 @@ public class TownData extends SavedData {
     }
 
     @Nullable
-    public Town getOwnerOf(ChunkPos pos) {
+    public ChunkOwner getOwnerOf(ChunkPos pos) {
         for (Town town : towns) {
             if (town.hasClaim(pos)) {
                 return town;
+            }
+        }
+
+        for (Nation nation : nations) {
+            if (nation.hasClaim(pos)) {
+                return nation;
             }
         }
         return null;

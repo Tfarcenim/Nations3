@@ -11,7 +11,7 @@ import tfar.nations3.platform.Services;
 
 import java.util.*;
 
-public class Town {
+public class Town implements ChunkOwner {
 
     private final TownData townData;
     private UUID owner;
@@ -37,12 +37,14 @@ public class Town {
         this.taxRate = taxRate;
     }
 
-    public String getName() {
-        return name;
-    }
-
+    @Override
     public Set<ChunkPos> getClaimed() {
         return claimed;
+    }
+
+    @Override
+    public String getName() {
+        return name;
     }
 
     public void clearClaimed() {
@@ -118,10 +120,6 @@ public class Town {
         return Set.of();
     }
 
-    public boolean hasClaim(ChunkPos pos) {
-        return claimed.contains(pos);
-    }
-
     public long getMoney() {
         return money;
     }
@@ -141,18 +139,6 @@ public class Town {
     public void deposit(long amount) {
         money += amount;
         setDirty();
-    }
-
-    public boolean claim(ChunkPos pos) {
-        boolean add = claimed.add(pos);
-        if (add) setDirty();
-        return add;
-    }
-
-    public boolean unClaim(ChunkPos pos) {
-        boolean remove = claimed.remove(pos);
-        if (remove) setDirty();
-        return remove;
     }
 
     public void collectTaxes() {

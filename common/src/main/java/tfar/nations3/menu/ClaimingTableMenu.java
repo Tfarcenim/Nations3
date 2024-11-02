@@ -29,6 +29,8 @@ public class ClaimingTableMenu extends AbstractContainerMenu {
     private final TownData townData;
     private Town town;
 
+    protected final DataSlot data = DataSlot.standalone();
+
     public ClaimingTableMenu(int id, Inventory inventory) {
         this(id,inventory,ContainerLevelAccess.NULL,new ClientTownInfos(81));
     }
@@ -64,6 +66,7 @@ public class ClaimingTableMenu extends AbstractContainerMenu {
             this.addSlot(new Slot(inventory, i, 8 + i * 18, 142 + startY));
         }
         addTownInfos(townInfos);
+        addDataSlot(data);
     }
 
     protected void addTownInfos(TownInfos pArray) {

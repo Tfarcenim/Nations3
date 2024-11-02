@@ -47,16 +47,21 @@ public class ClaimDisplay implements TownInfos {
     }
 
     public TownInfo getInfo(ChunkPos pos) {
-        Town townAtChunk = townData.getOwnerOf(pos);
+        ChunkOwner townAtChunk = townData.getOwnerOf(pos);
 
         if (townAtChunk == null) return TownInfo.WILDERNESS;
 
         Town playerTown = townData.getTownByPlayer(player.getUUID());
+        Nation playerNation = townData.getNationByPlayer(player.getUUID());
 
         if (Objects.equals(townAtChunk,playerTown)) {
             return new TownInfo(townAtChunk.getName(),Relations.OWN,false);
         }
 
-        return new TownInfo(townAtChunk.getName(),Relations.NEUTRAL,false);
+        if (Objects.equals(townAtChunk,playerNation)) {
+            return new TownInfo(townAtChunk.getName(),Relations.OWN,true);
+        }
+
+        return new TownInfo(townAtChunk.getName(),Relations.NEUTRAL,townAtChunk instanceof Nation);
     }
 }

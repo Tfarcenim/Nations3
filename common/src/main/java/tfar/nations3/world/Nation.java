@@ -4,11 +4,12 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
+import net.minecraft.world.level.ChunkPos;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
-public class Nation {
+public class Nation implements ChunkOwner {
 
     private final TownData data;
     private UUID owner;
@@ -17,6 +18,8 @@ public class Nation {
     private long money;
     private final Set<String> invited = new HashSet<>();
     private final Set<String> allianceInvited = new HashSet<>();
+    private final Set<ChunkPos> claimed = new HashSet<>();
+    private final Map<UUID,Set<TownPermission>> permissions = new HashMap<>();
 
     private @Nullable Rebellion rebellion;
 
@@ -35,6 +38,11 @@ public class Nation {
 
     public boolean containsTown(Town town) {
         return towns.contains(town);
+    }
+
+    @Override
+    public Set<ChunkPos> getClaimed() {
+        return claimed;
     }
 
     public void deposit(long amount) {
@@ -61,6 +69,7 @@ public class Nation {
         setDirty();
     }
 
+    @Override
     public String getName() {
         return name;
     }
@@ -89,6 +98,13 @@ public class Nation {
         data.setDirty();
     }
 
+    public void deepUnclaim(Set<ChunkPos> chunkPos) {
+        claimed.removeIf(chunkPos::contains);
+        for (Town town : towns) {
+            town.getClaimed().removeIf(chunkPos::contains);
+        }
+        setDirty();
+    }
 
     public void addInvite(String name) {
         invited.add(name);
@@ -123,6 +139,25 @@ public class Nation {
         return rebellion;
     }
 
+    public void grantPermission(UUID uuid,TownPermission townPermission) {
+            permissions.computeIfAbsent(uuid, k -> new HashSet<>());
+
+            permissions.get(uuid).add(townPermission);
+            setDirty();
+    }
+
+    public void revokePermission(UUID uuid,TownPermission townPermission) {
+        if (permissions.containsKey(uuid)) {
+            permissions.get(uuid).remove(townPermission);
+            setDirty();
+        }
+    }
+
+    public boolean checkPermission(UUID uuid,TownPermission permission) {
+        if (isOwner(uuid)) return true;
+        return permissions.containsKey(uuid) && permissions.get(uuid).contains(permission);
+    }
+
     public CompoundTag save() {
         CompoundTag tag = new CompoundTag();
         tag.putUUID("owner", owner);
@@ -130,7 +165,19 @@ public class Nation {
         tag.put("towns", saveTowns());
         tag.putLong("money",money);
         tag.put("allied",saveNations(allied));
+        tag.put("claimed", saveClaimed());
         return tag;
+    }
+
+    public ListTag saveClaimed() {
+        ListTag claimedTag = new ListTag();
+        for (ChunkPos chunkPos : claimed) {
+            CompoundTag chunkPosTag = new CompoundTag();
+            chunkPosTag.putInt("x", chunkPos.x);
+            chunkPosTag.putInt("z", chunkPos.z);
+            claimedTag.add(chunkPosTag);
+        }
+        return claimedTag;
     }
 
     public ListTag saveNations(Set<Nation> nations) {
@@ -160,7 +207,13 @@ public class Nation {
         }
         loadNations(allied,tag.getList("allied",Tag.TAG_STRING));
         money = tag.getLong("money");
+        ListTag claimedTag = tag.getList("claimed", Tag.TAG_COMPOUND);
+        for (Tag tag1 : claimedTag) {
+            CompoundTag compoundTag = (CompoundTag) tag1;
+            claimed.add(new ChunkPos(compoundTag.getInt("x"), compoundTag.getInt("z")));
+        }
     }
+
 
     public void loadNations(Set<Nation> nations,ListTag listTag) {
         for (Tag tag1 : listTag) {
@@ -169,6 +222,4 @@ public class Nation {
             nations.add(nation);
         }
     }
-
-
 }

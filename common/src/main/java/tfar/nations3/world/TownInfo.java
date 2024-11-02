@@ -10,12 +10,12 @@ public record TownInfo(String name, Relations relations, boolean isNation) {
 
     public void toPacket(FriendlyByteBuf buf) {
         buf.writeUtf(name);
-        buf.writeInt(relations.ordinal());
+        buf.writeEnum(relations);
         buf.writeBoolean(isNation);
     }
 
     public static TownInfo fromPacket(FriendlyByteBuf buf) {
-        return new TownInfo(buf.readUtf(),Relations.values()[buf.readInt()],buf.readBoolean());
+        return new TownInfo(buf.readUtf(),buf.readEnum(Relations.class),buf.readBoolean());
     }
 
     @Override

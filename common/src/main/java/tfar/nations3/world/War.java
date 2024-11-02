@@ -38,6 +38,14 @@ public class War {
         }
     }
 
+    Nation getLoser() {
+        if (attackerKills > defenderKills) {
+            return defender;
+        } else {
+            return attacker;
+        }
+    }
+
     public void trackKill(ServerPlayer attacker, ServerPlayer killed) {
         if (this.attacker.containsCitizen(attacker.getUUID())) {
             if (defender.containsCitizen(killed.getUUID())) {

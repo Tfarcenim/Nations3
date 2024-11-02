@@ -1,6 +1,8 @@
 package tfar.nations3.client;
 
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.Checkbox;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -44,6 +46,16 @@ public class ClaimingTableScreen extends AbstractContainerScreen<ClaimingTableMe
         this.renderTooltip($$0, $$1, $$2);
     }
 
+    Checkbox checkbox;
+
+    @Override
+    protected void init() {
+        super.init();
+        checkbox = new Checkbox(leftPos + 150,topPos + 4,20,20,Component.literal("Claim As Nation"),false);
+        //   public Checkbox(int pX, int pY, int pWidth, int pHeight, Component pMessage, boolean pSelected, boolean pShowLabel) {
+        addRenderableWidget(checkbox);
+    }
+
     @Override
     protected void renderTooltip(GuiGraphics $$0, int mouseX, int mouseY) {
         super.renderTooltip($$0, mouseX, mouseY);
@@ -56,7 +68,7 @@ public class ClaimingTableScreen extends AbstractContainerScreen<ClaimingTableMe
                 if (townInfo.equals(TownInfo.WILDERNESS)) {
                     $$0.renderTooltip(this.font, Component.literal("Wilderness"), mouseX, mouseY);
                 } else {
-                    $$0.renderTooltip(this.font, Component.literal(townInfo.name()), mouseX, mouseY);
+                    $$0.renderTooltip(this.font, Component.literal(townInfo.name() + " - "+(townInfo.isNation() ? "nation" : "town")), mouseX, mouseY);
                 }
             }
         }
@@ -93,9 +105,9 @@ public class ClaimingTableScreen extends AbstractContainerScreen<ClaimingTableMe
             TownInfo townInfo = menu.townInfos.get(index);
             if (townInfo != null) {
                 if (townInfo.equals(TownInfo.WILDERNESS)) {
-                    Services.PLATFORM.sendToServer(new C2SClaimChunk(x - 4, z - 4, false));
+                    Services.PLATFORM.sendToServer(new C2SClaimChunk(x - 4, z - 4, false,checkbox.selected()));
                 } else {
-                    Services.PLATFORM.sendToServer(new C2SClaimChunk(x - 4, z - 4, true));
+                    Services.PLATFORM.sendToServer(new C2SClaimChunk(x - 4, z - 4, true,checkbox.selected()));
                 }
             }
             return true;
@@ -112,7 +124,7 @@ public class ClaimingTableScreen extends AbstractContainerScreen<ClaimingTableMe
         TownInfos townInfos = menu.townInfos;
         for (int z = 0; z < 9;z++) {
             for (int x = 0; x < 9;x++) {
-                TownInfo townInfo = townInfos.get(x + 9 * z);
+                TownInfo townInfo = townInfos. get(x + 9 * z);
                 if (townInfo != null) {
                     graphics.fill(leftPos+gridOffsetX +x * gridSize + 1,topPos+gridOffsetY + z * gridSize + 1,
                             leftPos+gridOffsetX + x * gridSize + gridSize,topPos+gridOffsetY + z * gridSize + gridSize,

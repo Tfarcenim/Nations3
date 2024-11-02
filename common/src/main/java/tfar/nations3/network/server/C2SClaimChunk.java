@@ -5,6 +5,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.level.ChunkPos;
 import tfar.nations3.menu.ClaimingTableMenu;
+import tfar.nations3.world.Nation;
 import tfar.nations3.world.Town;
 import tfar.nations3.world.TownData;
 import tfar.nations3.world.TownPermissions;
@@ -14,17 +15,20 @@ public class C2SClaimChunk implements C2SModPacket {
     public final int x;
     public final int z;
     public final boolean remove;
+    public final boolean claimAsNation;
 
     public C2SClaimChunk(FriendlyByteBuf buf) {
         x = buf.readInt();
         z = buf.readInt();
         remove = buf.readBoolean();
+        claimAsNation = buf.readBoolean();
     }
 
-    public C2SClaimChunk(int x, int z, boolean remove) {
+    public C2SClaimChunk(int x, int z, boolean remove,boolean claimAsNation) {
         this.x = x;
         this.z = z;
         this.remove = remove;
+        this.claimAsNation = claimAsNation;
     }
 
     @Override
@@ -35,12 +39,23 @@ public class C2SClaimChunk implements C2SModPacket {
             ChunkPos chunkPos = new ChunkPos(playerPos.x + x, playerPos.z + z);
             TownData townData = TownData.getInstance(player.serverLevel());
             if (townData != null) {
-                Town town = townData.getTownByPlayer(player.getUUID());
-                if (town != null && town.checkPermission(player.getUUID(), TownPermissions.MANAGE_CLAIMS)) {
-                    if (remove) {
-                        town.unClaim(chunkPos);
-                    } else {
-                        town.claim(chunkPos);
+                if (claimAsNation) {
+                    Nation nation = townData.getNationByPlayer(player.getUUID());
+                    if (nation != null && nation.checkPermission(player.getUUID(), TownPermissions.MANAGE_CLAIMS)) {
+                        if (remove) {
+                            nation.unClaim(chunkPos);
+                        } else {
+                            nation.claim(chunkPos);
+                        }
+                    }
+                } else {
+                    Town town = townData.getTownByPlayer(player.getUUID());
+                    if (town != null && town.checkPermission(player.getUUID(), TownPermissions.MANAGE_CLAIMS)) {
+                        if (remove) {
+                            town.unClaim(chunkPos);
+                        } else {
+                            town.claim(chunkPos);
+                        }
                     }
                 }
             }
@@ -52,5 +67,6 @@ public class C2SClaimChunk implements C2SModPacket {
         to.writeInt(x);
         to.writeInt(z);
         to.writeBoolean(remove);
+        to.writeBoolean(claimAsNation);
     }
 }

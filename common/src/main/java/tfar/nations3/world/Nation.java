@@ -1,13 +1,18 @@
 package tfar.nations3.world;
 
+import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.ChunkPos;
 import org.jetbrains.annotations.Nullable;
+import tfar.nations3.platform.Services;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class Nation implements ChunkOwner {
 
@@ -60,8 +65,15 @@ public class Nation implements ChunkOwner {
         return true;
     }
 
+    @Override
     public boolean containsCitizen(UUID uuid) {
         return towns.stream().anyMatch(town -> town.containsCitizen(uuid));
+    }
+
+    @Override
+    public Set<UUID> getAllCitizens() {
+        Set<UUID> set = towns.stream().flatMap(town -> town.getAllCitizens().stream()).collect(Collectors.toSet());
+        return set;
     }
 
     public void addAlliance(Nation other) {
@@ -72,6 +84,12 @@ public class Nation implements ChunkOwner {
     @Override
     public String getName() {
         return name;
+    }
+
+    @Override
+    public void setName(String name) {
+        this.name = name;
+        setDirty();
     }
 
     public boolean removeTown(Town town) {
@@ -86,6 +104,12 @@ public class Nation implements ChunkOwner {
         return owner;
     }
 
+    @Override
+    public void setMoney(long money) {
+        this.money = money;
+        setDirty();
+    }
+
     public long getMoney() {
         return money;
     }
@@ -94,8 +118,14 @@ public class Nation implements ChunkOwner {
         return towns;
     }
 
+    @Override
     public void setDirty() {
         data.setDirty();
+    }
+
+    @Override
+    public TownData getData() {
+        return data;
     }
 
     public void deepUnclaim(Set<ChunkPos> chunkPos) {
@@ -221,5 +251,18 @@ public class Nation implements ChunkOwner {
             Nation nation = data.getNationByName(stringTag.getAsString());
             nations.add(nation);
         }
+    }
+
+     public List<Component> buildNationInfo() {
+        List<Component> list = new ArrayList<>();
+        list.add(Component.literal("Nation Info").withStyle(ChatFormatting.UNDERLINE));
+        list.add(Component.literal("Name: " + name));
+        list.add(Component.literal("Owner: " + Services.PLATFORM.getLastKnownUserName(owner)));
+        list.add(Component.literal("Nation Money: " + money));
+        list.add(Component.literal("Towns").withStyle(ChatFormatting.UNDERLINE));
+        for (Town town : getTowns()) {
+            list.add(Component.literal("Town: " + town.getName()));
+        }
+        return list;
     }
 }

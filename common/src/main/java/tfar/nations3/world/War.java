@@ -1,9 +1,15 @@
 package tfar.nations3.world;
 
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.bossevents.CustomBossEvent;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.ChunkPos;
+import tfar.nations3.Nations3;
 
+import java.util.Locale;
 import java.util.Set;
+import java.util.UUID;
 
 public class War {
 
@@ -14,20 +20,58 @@ public class War {
 
     private int attackerKills;
     private int defenderKills;
-    long ticksElapsed;
+    int ticksElapsed;
     final Set<ChunkPos> contested;
     boolean finished;
+
+    public CustomBossEvent bossEvent;
 
     public War(Nation attacker, Nation defender,Set<ChunkPos> contested) {
         this.attacker = attacker;
         this.defender = defender;
         this.contested = contested;
+        setupBar();
     }
 
+    void setupBar() {
+        bossEvent = new CustomBossEvent(Nations3.id(attacker.getName().toLowerCase(Locale.ROOT) +"-"+defender.getName().toLowerCase(Locale.ROOT)),
+                Component.literal(attacker.getName().toLowerCase(Locale.ROOT) +"-"+defender.getName().toLowerCase(Locale.ROOT)+" War"));
 
-    boolean tick() {
+        trackNation(attacker);
+        trackNation(defender);
+        bossEvent.setMax(BATTLE_TIME);
+    }
+
+    void trackNation(Nation nation) {
+        MinecraftServer server = nation.getData().level.getServer();
+        for (UUID uuid : nation.getAllCitizens()) {
+            ServerPlayer player = server.getPlayerList().getPlayer(uuid);
+            if (player != null) {
+                bossEvent.addPlayer(player);
+            } else {
+                bossEvent.addOfflinePlayer(uuid);
+            }
+        }
+    }
+
+    void tick() {
         ticksElapsed++;
-        return ticksElapsed> BATTLE_TIME;
+        bossEvent.setValue(ticksElapsed);
+        boolean finished = ticksElapsed> BATTLE_TIME;
+        if (finished) {
+            onFinish();
+        }
+    }
+
+    void onFinish() {
+        finished = true;
+        Nation loser = getLoser();
+        Nation winner = getWinner();
+        winner.getClaimed().addAll(contested);
+        loser.deepUnclaim(contested);
+        bossEvent.removeAllPlayers();
+        loser.broadcastMessage(Component.literal("You have lost the battle and contested territory"));
+        winner.broadcastMessage(Component.literal("You have won the battle and contested territory"));
     }
 
     Nation getWinner() {

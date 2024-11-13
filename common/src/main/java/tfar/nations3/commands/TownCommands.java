@@ -93,6 +93,14 @@ public class TownCommands {
                                 .executes(TownCommands::getTownInfo)
                         )
                 )
+                .then(Commands.literal("money").requires(commandSourceStack -> commandSourceStack.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                        .then(Commands.argument("name", StringArgumentType.string())
+                                .suggests(Suggestions.ALL_TOWNS)
+                                .then(Commands.argument("money", LongArgumentType.longArg(0))
+                                        .executes(TownCommands::setTownMoney)
+                                )
+                        )
+                )
 
                 .then(Commands.literal("permission")
                         .then(Commands.literal("grant")
@@ -115,14 +123,19 @@ public class TownCommands {
                                 )
                         )
                 )
+                .then(Commands.literal("rename")
+                        .then(Commands.argument("name", StringArgumentType.string())
+                                .executes(TownCommands::renameTown)
+                        )
+                )
         );
     }
 
-    static int createRebellion(CommandContext<CommandSourceStack>ctx) throws CommandSyntaxException {
+    static int createRebellion(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
         CommandSourceStack commandSourceStack = ctx.getSource();
         ServerPlayer player = commandSourceStack.getPlayerOrException();
         TownData townData = TownData.getInstance(player.serverLevel());
-        if (townData!= null) {
+        if (townData != null) {
             Town town = townData.getTownByPlayer(player.getUUID());
             if (town == null) {
                 commandSourceStack.sendFailure(TextComponents.NOT_IN_TOWN);
@@ -145,7 +158,6 @@ public class TownCommands {
             }
 
 
-
             if (town.getMoney() < Services.PLATFORM.getConfig().rebellionMoneyRequirement()) {
                 commandSourceStack.sendFailure(TextComponents.INSUFFICIENT_FUNDS_FOR_REBELLION);
                 return 0;
@@ -163,7 +175,7 @@ public class TownCommands {
                     .append(Component.literal("[Accept]").withStyle(Style.EMPTY.applyFormat(ChatFormatting.GREEN)
                             .withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/town join_rebellion " + town.getName()))));
 
-            town.sendToAll(rebellionInvite,true);
+            town.sendToAll(rebellionInvite, true);
 
             return 1;
 
@@ -176,7 +188,7 @@ public class TownCommands {
         CommandSourceStack commandSourceStack = ctx.getSource();
         ServerPlayer player = commandSourceStack.getPlayerOrException();
         TownData townData = TownData.getInstance(player.serverLevel());
-        if (townData!= null) {
+        if (townData != null) {
             Town town = townData.getTownByPlayer(player.getUUID());
             if (town == null) {
                 commandSourceStack.sendFailure(TextComponents.NOT_IN_TOWN);
@@ -210,7 +222,7 @@ public class TownCommands {
         CommandSourceStack commandSourceStack = ctx.getSource();
         ServerPlayer player = commandSourceStack.getPlayerOrException();
         TownData townData = TownData.getInstance(player.serverLevel());
-        if (townData!= null) {
+        if (townData != null) {
             Town town = townData.getTownByPlayer(player.getUUID());
             if (town == null) {
                 commandSourceStack.sendFailure(TextComponents.NOT_IN_TOWN);
@@ -237,9 +249,10 @@ public class TownCommands {
             }
 
             if (town == rebellion.getStarter()) {
-                if (rebellion.getApproval() >= Services.PLATFORM.getConfig().requiredToAgreeForRebellion())
-                {rebellion.activate();} else {
-                    commandSourceStack.sendFailure(Component.literal("Not enough approval for rebellion, current: "+rebellion.getApproval()+", required: "+
+                if (rebellion.getApproval() >= Services.PLATFORM.getConfig().requiredToAgreeForRebellion()) {
+                    rebellion.activate();
+                } else {
+                    commandSourceStack.sendFailure(Component.literal("Not enough approval for rebellion, current: " + rebellion.getApproval() + ", required: " +
                             Services.PLATFORM.getConfig().requiredToAgreeForRebellion()));
                 }
 
@@ -267,6 +280,36 @@ public class TownCommands {
         townData.createTown(player.getUUID(), name);
         commandSourceStack.sendSuccess(() -> Component.literal("Created town with name " + name), false);
         return 1;
+    }
+
+    public static int renameTown(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+        String name = StringArgumentType.getString(ctx, "name");
+        CommandSourceStack commandSourceStack = ctx.getSource();
+        ServerPlayer player = commandSourceStack.getPlayerOrException();
+        TownData townData = TownData.getInstance(player.serverLevel());
+        if (townData != null) {
+            Town town = townData.getTownByPlayer(player.getUUID());
+            if (town == null) {
+                commandSourceStack.sendFailure(TextComponents.NOT_IN_TOWN);
+                return 0;
+            }
+            if (!town.isOwner(player.getUUID())) {
+                commandSourceStack.sendFailure(TextComponents.INSUFFICIENT_PERMISSION);
+                return 0;
+            }
+
+            if (townData.getTownByName(name) != null) {
+                commandSourceStack.sendFailure(Component.literal("There is already a town named " + name + " in this world"));
+                return 0;
+            }
+
+            townData.getTownsByName().remove(town.getName());
+            commandSourceStack.sendSuccess(() -> Component.literal("Renamed town to " + name), false);
+            town.setName(name);
+            townData.getTownsByName().put(name, town);
+            return 1;
+        }
+        return 0;
     }
 
     public static int setTaxRate(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
@@ -575,6 +618,25 @@ public class TownCommands {
         }
         return 1;
     }
+
+    public static int setTownMoney(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+        CommandSourceStack commandSourceStack = ctx.getSource();
+        TownData townData = TownData.getInstance(commandSourceStack.getLevel());
+        if (townData != null) {
+            String name = StringArgumentType.getString(ctx,"name");
+            long money = LongArgumentType.getLong(ctx, "money");
+            Town town = townData.getTownByName(name);
+            if (town != null) {
+                commandSourceStack.sendSuccess(() -> Component.literal("Set "+name+" money to "+money), false);
+                town.setMoney(money);
+                return 1;
+            } else {
+                commandSourceStack.sendFailure(Component.literal("There is no town with the name " + name));
+            }
+        }
+        return 0;
+    }
+
 
     public static int destroyOwnTown(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
         CommandSourceStack commandSourceStack = ctx.getSource();

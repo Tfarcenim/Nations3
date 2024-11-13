@@ -47,6 +47,23 @@ public class Town implements ChunkOwner {
         return name;
     }
 
+    @Override
+    public void setName(String name) {
+        this.name = name;
+        setDirty();
+    }
+
+    @Override
+    public TownData getData() {
+        return townData;
+    }
+
+    @Override
+    public void setMoney(long money) {
+        this.money = money;
+        setDirty();
+    }
+
     public void clearClaimed() {
         claimed.clear();
         setDirty();
@@ -100,11 +117,13 @@ public class Town implements ChunkOwner {
         return Objects.equals(uuid,owner);
     }
 
+    @Override
     public boolean containsCitizen(UUID uuid) {
         return citizens.containsKey(uuid);
     }
 
-    public Set<UUID> getCitizens() {
+    @Override
+    public Set<UUID> getAllCitizens() {
         return citizens.keySet();
     }
 
@@ -173,11 +192,11 @@ public class Town implements ChunkOwner {
         list.add(Component.literal("Town Info").withStyle(ChatFormatting.UNDERLINE));
         list.add(Component.literal("Name: " + this.getName()));
         list.add(Component.literal("Owner: " + Services.PLATFORM.getLastKnownUserName(getOwner())));
-        list.add(Component.literal("Money: " + this.getMoney()));
+        list.add(Component.literal("Town Money: " + this.getMoney()));
         list.add(Component.literal("Tax Rate: " + this.getTaxRate()));
         list.add(Component.literal("Citizens").withStyle(ChatFormatting.UNDERLINE));
-        for (UUID uuid : this.getCitizens()) {
-            list.add(Component.literal("Citizen: " + Services.PLATFORM.getLastKnownUserName(uuid)));
+        for (Map.Entry<UUID,CitizenInfo> entry : this.citizens.entrySet()) {
+            list.add(Component.literal("Citizen: " + Services.PLATFORM.getLastKnownUserName(entry.getKey())+" | Money: "+entry.getValue().money));
         }
         list.add(Component.literal("Chunks claimed: " + this.getClaimed().size()));
         list.add(Component.literal((getFractionOnline() * 100)+"% online"));

@@ -7,7 +7,6 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
-import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
@@ -287,8 +286,8 @@ public class ModCommands {
 
         int nationThreshold = Services.PLATFORM.getConfig().getNationThreshold();
 
-        if (town.getCitizens().size() < nationThreshold) {
-            commandSourceStack.sendFailure(Component.literal("Insufficient citizens to create a nation: " + town.getCitizens().size() + " required: " + nationThreshold));
+        if (town.getAllCitizens().size() < nationThreshold) {
+            commandSourceStack.sendFailure(Component.literal("Insufficient citizens to create a nation: " + town.getAllCitizens().size() + " required: " + nationThreshold));
             return 0;
         }
 
@@ -302,10 +301,10 @@ public class ModCommands {
         ServerPlayer player = commandSourceStack.getPlayerOrException();
         TownData townData = TownData.getInstance(player.serverLevel());
         if (townData != null) {
-            Town town = townData.getTownByPlayer(player.getUUID());
-            if (town != null && town.getOwner().equals(player.getUUID())) {
+            Nation nation = townData.getNationByPlayer(player.getUUID());
+            if (nation != null && nation.getOwner().equals(player.getUUID())) {
                 commandSourceStack.sendSuccess(() -> Component.literal("Successfully destroyed own nation"), false);
-                townData.destroyTown(town);
+                townData.destroyNation(nation);
                 return 1;
             }
         }
@@ -318,13 +317,13 @@ public class ModCommands {
         CommandSourceStack commandSourceStack = ctx.getSource();
         TownData townData = TownData.getInstance(commandSourceStack.getLevel());
         if (townData != null) {
-            Town town = townData.getTownByName(name);
-            if (town != null) {
-                townData.destroyTown(town);
+            Nation nation = townData.getNationByName(name);
+            if (nation != null) {
+                townData.destroyNation(nation);
                 return 1;
             }
         }
-        commandSourceStack.sendFailure(Component.literal("There is no town with the name " + name));
+        commandSourceStack.sendFailure(Component.literal("There is no nation with the name " + name));
         return 0;
     }
 
@@ -345,7 +344,7 @@ public class ModCommands {
         if (townData != null) {
             Nation nation = townData.getNationByName(name);
             if (nation != null) {
-                List<Component> info = buildNationInfo(nation);
+                List<Component> info = nation.buildNationInfo();
                 for (Component component : info) {
                     commandSourceStack.sendSuccess(() -> component, false);
                 }
@@ -363,7 +362,7 @@ public class ModCommands {
         if (townData != null) {
             Nation nation = townData.getNationByPlayer(player.getUUID());
             if (nation != null) {
-                List<Component> info = buildNationInfo(nation);
+                List<Component> info = nation.buildNationInfo();
                 for (Component component : info) {
                     commandSourceStack.sendSuccess(() -> component, false);
                 }
@@ -372,19 +371,5 @@ public class ModCommands {
         }
         commandSourceStack.sendFailure(TextComponents.NOT_IN_NATION);
         return 0;
-    }
-
-    protected static List<Component> buildNationInfo(Nation nation) {
-        List<Component> list = new ArrayList<>();
-        list.add(Component.literal("Nation Info").withStyle(ChatFormatting.UNDERLINE));
-        list.add(Component.literal("Name: " + nation.getName()));
-        list.add(Component.literal("Owner: " + Services.PLATFORM.getLastKnownUserName(nation.getOwner())));
-        list.add(Component.literal("Money: " + nation.getMoney()));
-        list.add(Component.literal("Towns").withStyle(ChatFormatting.UNDERLINE));
-        for (Town town : nation.getTowns()) {
-            list.add(Component.literal("Town: " + town.getName()));
-        }
-
-        return list;
     }
 }

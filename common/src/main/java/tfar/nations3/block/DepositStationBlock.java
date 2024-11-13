@@ -32,7 +32,7 @@ public class DepositStationBlock extends Block {
                 if (town != null) {
                     ItemStack stack = player.getItemInHand(pHand);
                     if (stack.isEmpty()) {
-                        player.displayClientMessage(Component.literal("Balance: " + town.getMoney()), false);
+                        player.displayClientMessage(Component.literal("Your Balance: " + town.getInfo(player.getUUID()).money), false);
                     } else {
                         Item item = stack.getItem();
                         Object2LongMap<Item> depositValues = Services.PLATFORM.getConfig().getDepositValues();

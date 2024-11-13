@@ -29,6 +29,7 @@ public class Rebellion {
         TownData townData = starter.getTownData();
         Nation nation = townData.getNationByTown(starter);
         if (nation != null) {
+            nation.removeTown(starter);
             Nation newNation = townData.createNation(starter,starter.getName()+"-state");
             for (Town town : members) {
                 nation.removeTown(town);
@@ -47,7 +48,7 @@ public class Rebellion {
     }
 
     public double getApproval() {
-        int count = members.stream().mapToInt(town -> town.getCitizens().size()).sum();
+        int count = members.stream().mapToInt(town -> town.getAllCitizens().size()).sum();
         return (double) approve.size()/count;
     }
 

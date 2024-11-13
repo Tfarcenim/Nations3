@@ -65,11 +65,13 @@ public class Nations3Forge {
     void death(LivingDeathEvent event) {
         LivingEntity living = event.getEntity();
         DamageSource source = event.getSource();
-        TownData townData = TownData.getOrCreateDefaultInstance(living.getServer());
-        if (living instanceof ServerPlayer player) {
-            Entity killer = source.getEntity();
-            if (killer instanceof ServerPlayer killerPlayer) {
-                townData.trackKill(killerPlayer,player);
+        if (!living.level().isClientSide) {
+            if (living instanceof ServerPlayer player) {
+                TownData townData = TownData.getOrCreateDefaultInstance(living.getServer());
+                Entity killer = source.getEntity();
+                if (killer instanceof ServerPlayer killerPlayer) {
+                    townData.trackKill(killerPlayer, player);
+                }
             }
         }
     }

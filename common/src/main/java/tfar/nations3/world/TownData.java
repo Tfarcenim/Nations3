@@ -85,13 +85,7 @@ public class TownData extends SavedData {
             payRent();
         }
         for (War war : activeWars) {
-            if (war.tick()) {
-                war.finished = true;
-                Nation loser = war.getLoser();
-                Nation winner = war.getWinner();
-                winner.getClaimed().addAll(war.contested);
-                loser.deepUnclaim(war.contested);
-            }
+            war.tick();
         }
         activeWars.removeIf(war -> war.finished);
     }

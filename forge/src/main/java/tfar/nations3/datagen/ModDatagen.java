@@ -21,6 +21,7 @@ public class ModDatagen {
         ExistingFileHelper existingFileHelper = event.getExistingFileHelper();
         dataGenerator.addProvider(client,new ModLangProvider(packOutput));
         dataGenerator.addProvider(client,new ModBlockstateProvider(packOutput,existingFileHelper));
+        dataGenerator.addProvider(client,new ModItemModelProvider(packOutput,existingFileHelper));
         if (event.includeServer()) {
             dataGenerator.addProvider(true, ModLootTableProvider.create(packOutput));
             dataGenerator.addProvider(true, new ModBlockTagsProvider(packOutput, lookupProvider, existingFileHelper));

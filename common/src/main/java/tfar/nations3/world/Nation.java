@@ -110,6 +110,7 @@ public class Nation implements ChunkOwner {
         setDirty();
     }
 
+    @Override
     public long getMoney() {
         return money;
     }

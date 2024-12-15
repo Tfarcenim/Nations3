@@ -70,8 +70,19 @@ public class ModCommands {
                                 .executes(ModCommands::acceptAllianceInvite)
                         )
                 )
+                .then(Commands.literal("declare_war")
+                        .then(Commands.argument("nation",StringArgumentType.string())
+                                .executes(ModCommands::declareWar)
+                        )
+                )
         );
     }
+
+
+    public static int declareWar(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException{
+        return 1;
+    }
+
     public static int inviteAlliance(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
         CommandSourceStack commandSourceStack = ctx.getSource();
         ServerPlayer player = commandSourceStack.getPlayerOrException();

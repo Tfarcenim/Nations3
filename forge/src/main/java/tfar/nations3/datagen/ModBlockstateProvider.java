@@ -4,6 +4,7 @@ import net.minecraft.data.PackOutput;
 import net.minecraftforge.client.model.generators.BlockStateProvider;
 import net.minecraftforge.common.data.ExistingFileHelper;
 import tfar.nations3.Nations3;
+import tfar.nations3.init.ModBlocks;
 
 public class ModBlockstateProvider extends BlockStateProvider {
     public ModBlockstateProvider(PackOutput output, ExistingFileHelper exFileHelper) {
@@ -12,6 +13,6 @@ public class ModBlockstateProvider extends BlockStateProvider {
 
     @Override
     protected void registerStatesAndModels() {
-
+        simpleBlock(ModBlocks.DEPOSIT_STATION);
     }
 }

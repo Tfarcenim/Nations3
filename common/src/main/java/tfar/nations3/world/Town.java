@@ -139,6 +139,7 @@ public class Town implements ChunkOwner {
         return Set.of();
     }
 
+    @Override
     public long getMoney() {
         return money;
     }

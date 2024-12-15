@@ -33,6 +33,7 @@ public interface ChunkOwner {
     TownData getData();
 
     void setMoney(long money);
+    long getMoney();
     boolean containsCitizen(UUID uuid);
     Set<UUID> getAllCitizens();
 

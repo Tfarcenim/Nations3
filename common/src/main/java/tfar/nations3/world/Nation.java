@@ -65,6 +65,10 @@ public class Nation implements ChunkOwner {
         return true;
     }
 
+    public boolean isAllied(Nation other) {
+        return allied.contains(other);
+    }
+
     @Override
     public boolean containsCitizen(UUID uuid) {
         return towns.stream().anyMatch(town -> town.containsCitizen(uuid));

@@ -222,6 +222,11 @@ public class TownData extends SavedData {
                 .get(compoundTag -> loadStatic(compoundTag, serverLevel), name(serverLevel));
     }
 
+    @Nullable
+    public static TownData getDefaultInstance(MinecraftServer server) {
+        return getInstance(server.overworld());
+    }
+
     public static TownData getOrCreateInstance(ServerLevel serverLevel) {
         return serverLevel.getDataStorage()
                 .computeIfAbsent(compoundTag -> loadStatic(compoundTag,serverLevel),

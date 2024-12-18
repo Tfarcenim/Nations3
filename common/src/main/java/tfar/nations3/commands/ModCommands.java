@@ -72,15 +72,57 @@ public class ModCommands {
                 )
                 .then(Commands.literal("declare_war")
                         .then(Commands.argument("nation",StringArgumentType.string())
+                                .suggests(Suggestions.ALL_NATIONS)
                                 .executes(ModCommands::declareWar)
                         )
+                )
+                .then(Commands.literal("war_terms")
+                        .executes(ModCommands::warTerms)
                 )
         );
     }
 
-
-    public static int declareWar(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException{
+    public static int warTerms(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+        CommandSourceStack source = ctx.getSource();
+        ServerPlayer player = source.getPlayerOrException();
         return 1;
+    }
+
+
+        public static int declareWar(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException{
+        ServerPlayer player = ctx.getSource().getPlayerOrException();
+        CommandSourceStack source = ctx.getSource();
+        String nationName = StringArgumentType.getString(ctx,"nation");
+        TownData townData = TownData.getInstance(source.getLevel());
+        if (townData != null) {
+            Nation ownNation = townData.getNationByPlayer(player.getUUID());
+
+            if (ownNation == null) {
+                source.sendFailure(TextComponents.NOT_IN_NATION);
+                return 0;
+            }
+
+            if (!ownNation.isOwner(player.getUUID())) {
+                source.sendFailure(TextComponents.NOT_NATION_OWNER);
+                return 0;
+            }
+
+            Nation otherNation = townData.getNationByName(nationName);
+            if (otherNation == null) {
+                source.sendFailure(TextComponents.notFound(nationName));
+                return 0;
+            }
+
+            if (ownNation == otherNation || ownNation.isAllied(otherNation)) {
+                source.sendFailure(Component.literal("Can't attack allied nation"));
+                return 0;
+            }
+
+            source.getServer().getPlayerList().broadcastSystemMessage(Component.literal(ownNation.getName() +" has declared war on "+otherNation.getName()),false);
+            townData.addWar(ownNation,otherNation,otherNation.getClaimed());
+            return 1;
+        }
+        return 0;
     }
 
     public static int inviteAlliance(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
@@ -103,7 +145,7 @@ public class ModCommands {
 
             Nation invited = townData.getNationByName(nationName);
             if (invited == null) {
-                commandSourceStack.sendFailure(Component.literal("Nation with name "+nationName+" not found"));
+                commandSourceStack.sendFailure(TextComponents.notFound(nationName));
                 return 0;
             }
             if (invited == ownNation) {
@@ -153,7 +195,7 @@ public class ModCommands {
 
             Nation invited = townData.getNationByName(nationName);
             if (invited == null) {
-                commandSourceStack.sendFailure(Component.literal("Nation with name "+nationName+" not found"));
+                commandSourceStack.sendFailure(TextComponents.notFound(nationName));
                 return 0;
             }
             if (invited == ownNation) {

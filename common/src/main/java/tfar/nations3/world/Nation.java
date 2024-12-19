@@ -50,6 +50,20 @@ public class Nation implements ChunkOwner {
         return claimed;
     }
 
+    public Set<ChunkPos> getTownClaimed() {
+        Set<ChunkPos> claims = new HashSet<>();
+        for (Town town : towns) {
+            claims.addAll(town.getClaimed());
+        }
+        return claims;
+    }
+
+    public Set<ChunkPos> getAllClaimed() {
+        Set<ChunkPos> all = getTownClaimed();
+        all.addAll(getClaimed());
+        return all;
+    }
+
     public void deposit(long amount) {
         money+= amount;
         setDirty();
@@ -133,10 +147,11 @@ public class Nation implements ChunkOwner {
         return data;
     }
 
-    public void deepUnclaim(Set<ChunkPos> chunkPos) {
-        claimed.removeIf(chunkPos::contains);
+    public void deepUnclaim(Set<ChunkPos> chunks) {
+        claimed.removeIf(chunks::contains);
         for (Town town : towns) {
-            town.getClaimed().removeIf(chunkPos::contains);
+            Set<ChunkPos> claims = town.getClaimed();
+            claims.removeIf(chunks::contains);
         }
         setDirty();
     }
@@ -268,6 +283,8 @@ public class Nation implements ChunkOwner {
         for (Town town : getTowns()) {
             list.add(Component.literal("Town: " + town.getName()));
         }
-        return list;
+        list.add(Component.literal("Nation chunks claimed: " + this.getClaimed().size()));
+        list.add(Component.literal("Town chunks claimed: " + this.getTownClaimed().size()));
+         return list;
     }
 }

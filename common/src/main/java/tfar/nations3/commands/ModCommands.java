@@ -1,6 +1,7 @@
 package tfar.nations3.commands;
 
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.LongArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
@@ -79,7 +80,33 @@ public class ModCommands {
                 .then(Commands.literal("war_terms")
                         .executes(ModCommands::warTerms)
                 )
+                .then(Commands.literal("money").requires(commandSourceStack -> commandSourceStack.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                        .then(Commands.argument("name", StringArgumentType.string())
+                                .suggests(Suggestions.ALL_NATIONS)
+                                .then(Commands.argument("money", LongArgumentType.longArg(0))
+                                        .executes(ModCommands::setNationMoney)
+                                )
+                        )
+                )
         );
+    }
+
+    public static int setNationMoney(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+        CommandSourceStack commandSourceStack = ctx.getSource();
+        TownData townData = TownData.getInstance(commandSourceStack.getLevel());
+        if (townData != null) {
+            String name = StringArgumentType.getString(ctx,"name");
+            long money = LongArgumentType.getLong(ctx, "money");
+            Nation nation = townData.getNationByName(name);
+            if (nation != null) {
+                commandSourceStack.sendSuccess(() -> Component.literal("Set "+name+" money to "+money), false);
+                nation.setMoney(money);
+                return 1;
+            } else {
+                commandSourceStack.sendFailure(TextComponents.notFound(name));
+            }
+        }
+        return 0;
     }
 
     public static int warTerms(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
@@ -118,8 +145,13 @@ public class ModCommands {
                 return 0;
             }
 
+            if (ownNation.getMoney() < Services.PLATFORM.getConfig().warMoneyRequirement() * otherNation.getClaimed().size()) {
+                source.sendFailure(Component.literal("Insufficient funds to declare war"));
+                return 0;
+            }
+
             source.getServer().getPlayerList().broadcastSystemMessage(Component.literal(ownNation.getName() +" has declared war on "+otherNation.getName()),false);
-            townData.addWar(ownNation,otherNation,otherNation.getClaimed());
+            townData.addWar(ownNation,otherNation,otherNation.getAllClaimed());
             return 1;
         }
         return 0;
@@ -376,7 +408,7 @@ public class ModCommands {
                 return 1;
             }
         }
-        commandSourceStack.sendFailure(Component.literal("There is no nation with the name " + name));
+        commandSourceStack.sendFailure(TextComponents.notFound(name));
         return 0;
     }
 
@@ -404,7 +436,7 @@ public class ModCommands {
                 return 1;
             }
         }
-        commandSourceStack.sendFailure(Component.literal("There is no nation with the name " + name));
+        commandSourceStack.sendFailure(TextComponents.notFound(name));
         return 0;
     }
 

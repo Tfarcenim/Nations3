@@ -35,6 +35,7 @@ public class TownData extends SavedData {
         Nation nation = new Nation(this, capital,name);
         nations.add(nation);
         nations_by_name.put(nation.getName(),nation);
+        setDirty();
         return nation;
     }
 

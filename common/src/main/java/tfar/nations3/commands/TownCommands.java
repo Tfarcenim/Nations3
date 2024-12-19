@@ -456,7 +456,7 @@ public class TownCommands {
                 return 1;
             }
         }
-        commandSourceStack.sendFailure(Component.literal("There is no town with the name " + name));
+        commandSourceStack.sendFailure(TextComponents.townNotFound(name));
         return 0;
     }
 
@@ -631,7 +631,7 @@ public class TownCommands {
                 town.setMoney(money);
                 return 1;
             } else {
-                commandSourceStack.sendFailure(Component.literal("There is no town with the name " + name));
+                commandSourceStack.sendFailure(TextComponents.townNotFound(name));
             }
         }
         return 0;
@@ -666,7 +666,7 @@ public class TownCommands {
                 return 1;
             }
         }
-        commandSourceStack.sendFailure(Component.literal("There is no town with the name " + name));
+        commandSourceStack.sendFailure(TextComponents.townNotFound(name));
         return 0;
     }
 

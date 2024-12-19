@@ -16,4 +16,8 @@ public class TextComponents {
         return Component.literal("Nation with name "+nationName+" not found");
     }
 
+    public static MutableComponent townNotFound(String townName) {
+        return Component.literal("Town with name "+townName+" not found");
+    }
+
 }

@@ -9,6 +9,7 @@ public interface MLConfig {
     int getNationThreshold();
     double getNationTaxRate();
     long rebellionMoneyRequirement();
+    long warMoneyRequirement();
     double requiredOnlineForRebellion();
     double requiredToAgreeForRebellion();
 }

@@ -67,11 +67,17 @@ public class War {
         finished = true;
         Nation loser = getLoser();
         Nation winner = getWinner();
-        winner.getClaimed().addAll(contested);
-        loser.deepUnclaim(contested);
+        if (winner == attacker) {
+            winner.getClaimed().addAll(contested);
+            loser.deepUnclaim(contested);
+            loser.broadcastMessage(Component.literal("You have lost the battle and contested territory"));
+            winner.broadcastMessage(Component.literal("You have won the battle and contested territory"));
+        } else {
+            loser.broadcastMessage(Component.literal("You have lost the battle and gained nothing"));
+            winner.broadcastMessage(Component.literal("You have won the battle and kept territory"));
+        }
         bossEvent.removeAllPlayers();
-        loser.broadcastMessage(Component.literal("You have lost the battle and contested territory"));
-        winner.broadcastMessage(Component.literal("You have won the battle and contested territory"));
+
     }
 
     Nation getWinner() {

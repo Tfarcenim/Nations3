@@ -61,6 +61,11 @@ public class TomlConfig implements MLConfig {
         return Server.fraction_required_to_start_rebellion.get();
     }
 
+    @Override
+    public long warMoneyRequirement() {
+        return Server.war_money_requirement.get();
+    }
+
     public static class Server {
         public static ForgeConfigSpec.LongValue rent;
         public static ForgeConfigSpec.LongValue rebellion_money_requirement;
@@ -70,12 +75,13 @@ public class TomlConfig implements MLConfig {
         public static Object2LongMap<Item> cache = new Object2LongOpenHashMap<>();
         public static ForgeConfigSpec.DoubleValue fraction_required_online_for_rebellion;
         public static ForgeConfigSpec.DoubleValue fraction_required_to_start_rebellion;
+        public static ForgeConfigSpec.LongValue war_money_requirement;
 
 
         public Server(ForgeConfigSpec.Builder builder) {
             builder.push("general");
             rent = builder.defineInRange("rent",200,0,1000000000L);
-            rebellion_money_requirement = builder.defineInRange("rebellion_money_requirement",10,0,1000000000L);
+            rebellion_money_requirement = builder.defineInRange("rebellion_money_requirement",10,0,1000000000000000000L);
             nation_threshold = builder.defineInRange("nation_threshold",5,1,1000);
             deposit_values = builder
                     .comment("Deposit values")
@@ -84,7 +90,7 @@ public class TomlConfig implements MLConfig {
             nation_tax_rate = builder.defineInRange("nation_tax_rate",.025,0,1000);
             fraction_required_online_for_rebellion = builder.defineInRange("fraction_required_online_for_rebellion",.5,0,1);
             fraction_required_to_start_rebellion = builder.defineInRange("fraction_required_to_start_rebellion",.25,0,1);
-
+            war_money_requirement = builder.defineInRange("war_money_requirement",10,0,1000000000000000000L);
             builder.pop();
         }
     }

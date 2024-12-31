@@ -5,6 +5,8 @@ import com.mojang.brigadier.arguments.LongArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import eu.pb4.sgui.api.elements.GuiElementBuilder;
+import eu.pb4.sgui.api.gui.SimpleGui;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -14,6 +16,8 @@ import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.inventory.MenuType;
+import net.minecraft.world.item.Items;
 import tfar.nations3.TextComponents;
 import tfar.nations3.platform.Services;
 import tfar.nations3.world.*;
@@ -112,6 +116,22 @@ public class ModCommands {
     public static int warTerms(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
         CommandSourceStack source = ctx.getSource();
         ServerPlayer player = source.getPlayerOrException();
+        SimpleGui simpleGui = new SimpleGui(MenuType.HOPPER,player,false);
+        simpleGui.setTitle(Component.literal("War Terms"));
+        simpleGui.setSlot(0,new GuiElementBuilder(Items.EMERALD).setName(Component.literal("Money Percentage")).setCallback((index, type, action) -> {
+
+        }));
+
+        simpleGui.setSlot(2,new GuiElementBuilder(Items.PAPER).setName(Component.literal("Town")).setCallback((index, type, action) -> {
+
+        }));
+
+        simpleGui.setSlot(4,new GuiElementBuilder(Items.WRITABLE_BOOK).setName(Component.literal("Finalize")).setCallback((index, type, action) -> {
+
+        }));
+
+        simpleGui.open();
+
         return 1;
     }
 

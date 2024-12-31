@@ -24,6 +24,7 @@ public class TownData extends SavedData {
 
     final ServerLevel level;
     final List<War> activeWars = new ArrayList<>();
+    final List<CompletedWar> completedWars = new ArrayList<>();
 
     public TownData(ServerLevel level) {
         this.level = level;
@@ -87,6 +88,9 @@ public class TownData extends SavedData {
         }
         for (War war : activeWars) {
             war.tick();
+            if (war.finished) {
+                completedWars.add(new CompletedWar(war.getWinner(),war.getLoser()));
+            }
         }
         activeWars.removeIf(war -> war.finished);
     }

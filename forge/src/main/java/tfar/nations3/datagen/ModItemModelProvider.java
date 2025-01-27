@@ -17,6 +17,7 @@ public class ModItemModelProvider extends ItemModelProvider {
     @Override
     protected void registerModels() {
         makeSimpleBlockItem(ModBlocks.DEPOSIT_STATION.asItem());
+        makeSimpleBlockItem(ModBlocks.CLAIMING_TABLE.asItem());
     }
 
     protected void makeSimpleBlockItem(Item item, ResourceLocation loc) {

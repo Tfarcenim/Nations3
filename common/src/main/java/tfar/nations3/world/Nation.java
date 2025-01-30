@@ -6,7 +6,6 @@ import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.ChunkPos;
 import org.jetbrains.annotations.Nullable;
 import tfar.nations3.platform.Services;
@@ -46,21 +45,21 @@ public class Nation implements ChunkOwner {
     }
 
     @Override
-    public Set<ChunkPos> getClaimed() {
+    public Set<ChunkPos> getDirectClaimed() {
         return claimed;
     }
 
     public Set<ChunkPos> getTownClaimed() {
         Set<ChunkPos> claims = new HashSet<>();
         for (Town town : towns) {
-            claims.addAll(town.getClaimed());
+            claims.addAll(town.getDirectClaimed());
         }
         return claims;
     }
 
     public Set<ChunkPos> getAllClaimed() {
         Set<ChunkPos> all = getTownClaimed();
-        all.addAll(getClaimed());
+        all.addAll(getDirectClaimed());
         return all;
     }
 
@@ -150,10 +149,14 @@ public class Nation implements ChunkOwner {
     public void deepUnclaim(Set<ChunkPos> chunks) {
         claimed.removeIf(chunks::contains);
         for (Town town : towns) {
-            Set<ChunkPos> claims = town.getClaimed();
+            Set<ChunkPos> claims = town.getDirectClaimed();
             claims.removeIf(chunks::contains);
         }
         setDirty();
+    }
+
+    public void deepUnclaimAll() {
+        deepUnclaim(getAllClaimed());
     }
 
     public void addInvite(String name) {
@@ -283,7 +286,7 @@ public class Nation implements ChunkOwner {
         for (Town town : getTowns()) {
             list.add(Component.literal("Town: " + town.getName()));
         }
-        list.add(Component.literal("Nation chunks claimed: " + this.getClaimed().size()));
+        list.add(Component.literal("Nation chunks claimed: " + this.getDirectClaimed().size()));
         list.add(Component.literal("Town chunks claimed: " + this.getTownClaimed().size()));
          return list;
     }

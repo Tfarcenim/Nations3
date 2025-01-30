@@ -5,18 +5,20 @@ import com.mojang.brigadier.arguments.LongArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import eu.pb4.sgui.api.elements.GuiElement;
 import eu.pb4.sgui.api.elements.GuiElementBuilder;
+import eu.pb4.sgui.api.gui.AnvilInputGui;
 import eu.pb4.sgui.api.gui.SimpleGui;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
-import net.minecraft.network.chat.ClickEvent;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.HoverEvent;
-import net.minecraft.network.chat.Style;
+import net.minecraft.network.chat.*;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Mth;
 import net.minecraft.world.inventory.MenuType;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import tfar.nations3.TextComponents;
 import tfar.nations3.platform.Services;
@@ -29,6 +31,9 @@ public class ModCommands {
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
 
         TownCommands.registerTownCommands(dispatcher);
+        if (Services.PLATFORM.isDevelopmentEnvironment()) {
+            TestCommands.register(dispatcher);
+        }
 
         dispatcher.register(Commands.literal("nation")
                 .then(Commands.literal("create")
@@ -70,6 +75,9 @@ public class ModCommands {
                                 .executes(ModCommands::inviteAlliance)
                         )
                 )
+                .then(Commands.literal("list")
+                        .executes(ModCommands::listNations)
+                )
                 .then(Commands.literal("accept_alliance_invite")
                         .then(Commands.argument("nation",StringArgumentType.string())
                                 .executes(ModCommands::acceptAllianceInvite)
@@ -82,6 +90,7 @@ public class ModCommands {
                         )
                 )
                 .then(Commands.literal("war_terms")
+                        .then(Commands.literal("info").executes(ModCommands::warTermInfo))
                         .executes(ModCommands::warTerms)
                 )
                 .then(Commands.literal("money").requires(commandSourceStack -> commandSourceStack.hasPermission(Commands.LEVEL_GAMEMASTERS))
@@ -93,6 +102,26 @@ public class ModCommands {
                         )
                 )
         );
+    }
+
+    public static int listNations(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+        CommandSourceStack pSource = ctx.getSource();
+        TownData townData = TownData.getInstance(pSource.getLevel());
+        if (townData != null) {
+            Collection<Nation> collection = townData.getNations();
+            if (collection.isEmpty()) {
+                pSource.sendSuccess(() -> Component.literal("There are no nations"), false);
+            } else {
+                pSource.sendSuccess(() -> {
+                    return Component.literal("There are "+collection.size() +" nations: ")
+                            .append(ComponentUtils.formatList(collection, town -> Component.literal(town.getName())));
+                }, false);
+            }
+
+            return collection.size();
+        }
+        pSource.sendFailure(Component.literal("There are no towns"));
+        return 0;
     }
 
     public static int setNationMoney(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
@@ -116,22 +145,75 @@ public class ModCommands {
     public static int warTerms(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
         CommandSourceStack source = ctx.getSource();
         ServerPlayer player = source.getPlayerOrException();
-        SimpleGui simpleGui = new SimpleGui(MenuType.HOPPER,player,false);
-        simpleGui.setTitle(Component.literal("War Terms"));
-        simpleGui.setSlot(0,new GuiElementBuilder(Items.EMERALD).setName(Component.literal("Money Percentage")).setCallback((index, type, action) -> {
+        TownData townData = TownData.getInstance(player.server.overworld());
+        if (townData != null) {
+            CompletedWar completedWar = townData.findValidWar(player);
+            if (completedWar == null)  {
+                player.sendSystemMessage(Component.literal("No valid completed war found"));
+                return 0;
+            }
 
-        }));
+            SimpleGui simpleGui = new SimpleGui(MenuType.HOPPER, player, false);
+            simpleGui.setTitle(Component.literal("War Terms"));
+            simpleGui.setSlot(0, new GuiElementBuilder(Items.EMERALD).setName(Component.literal("Money Percentage").append(" "+completedWar.getWarTerms().money_percentage*100+"%")).setCallback((index, type, action) -> {
+                AnvilInputGui anvilGui = new AnvilInputGui(player, false);
 
-        simpleGui.setSlot(2,new GuiElementBuilder(Items.PAPER).setName(Component.literal("Town")).setCallback((index, type, action) -> {
+                anvilGui.setSlot(0,new GuiElementBuilder(Items.PAPER).setName(Component.literal((completedWar.getWarTerms().money_percentage*100)+"")).setCallback((index1, type1, action1) -> {
+                }));
 
-        }));
 
-        simpleGui.setSlot(4,new GuiElementBuilder(Items.WRITABLE_BOOK).setName(Component.literal("Finalize")).setCallback((index, type, action) -> {
+                anvilGui.setSlot(2,new GuiElementBuilder(Items.PAPER).setName(Component.literal("Set")).setCallback((index1, type1, action1) -> {
+                        try {
+                            double d = Mth.clamp(Double.parseDouble(anvilGui.getInput())/100,0,1);
+                            completedWar.getWarTerms().money_percentage = d;
+                            anvilGui.close();
+                        }
+                        catch (Exception e){
+                            e.printStackTrace();
+                            //player.sendSystemMessage(Component.literal(e.getMessage()));
+                        }
 
-        }));
+                }));
+                anvilGui.open();
+            }));
+            Item item=completedWar.getWarTerms().take_land? Items.GREEN_STAINED_GLASS_PANE : Items.RED_STAINED_GLASS_PANE;
+            simpleGui.setSlot(2, new GuiElementBuilder(item).setName(Component.literal("Take land?")).setCallback((index, type, action) -> {
+                boolean yes = simpleGui.getSlot(2).getItemStack().is(Items.GREEN_STAINED_GLASS_PANE);
+                ItemStack stack1=yes? Items.RED_STAINED_GLASS_PANE.getDefaultInstance()
+                        : Items.GREEN_STAINED_GLASS_PANE.getDefaultInstance();
+                stack1.setHoverName(Component.literal("Take land?").withStyle(Style.EMPTY.withItalic(false)));
+                ((GuiElement)simpleGui.getSlot(2)).setItemStack(stack1);
+                completedWar.getWarTerms().take_land = !yes;
+            }));
 
-        simpleGui.open();
+            simpleGui.setSlot(4, new GuiElementBuilder(Items.WRITABLE_BOOK).setName(Component.literal("Finalize")).setCallback((index, type, action) -> {
+                townData.finalizeWar(completedWar);
+                player.displayClientMessage(Component.literal("Finalized war terms"),false);
+                simpleGui.close();
+            }));
 
+            simpleGui.open();
+
+            return 1;
+        }
+        return 0;
+    }
+
+    static int warTermInfo(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+        CommandSourceStack source = ctx.getSource();
+        ServerPlayer player = source.getPlayerOrException();
+        TownData townData = TownData.getInstance(player.server.overworld());
+        if (townData != null) {
+            CompletedWar completedWar = townData.findValidWar(player);
+            if (completedWar == null) {
+                player.sendSystemMessage(Component.literal("No valid completed war found"));
+                return 0;
+            }
+            source.sendSystemMessage(Component.literal("Winner: "+completedWar.winner()));
+            source.sendSystemMessage(Component.literal("Loser: "+completedWar.loser()));
+            CompletedWar.WarTerms warTerms = completedWar.getWarTerms();
+            source.sendSystemMessage(Component.literal("Money percentage: "+warTerms.money_percentage));
+        }
         return 1;
     }
 
@@ -165,7 +247,7 @@ public class ModCommands {
                 return 0;
             }
 
-            if (ownNation.getMoney() < Services.PLATFORM.getConfig().warMoneyRequirement() * otherNation.getClaimed().size()) {
+            if (ownNation.getMoney() < Services.PLATFORM.getConfig().warMoneyRequirement() * otherNation.getDirectClaimed().size()) {
                 source.sendFailure(Component.literal("Insufficient funds to declare war"));
                 return 0;
             }

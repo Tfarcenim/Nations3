@@ -47,9 +47,10 @@ public final class CompletedWar {
     }
 
 
-    public class WarTerms {
+    public static class WarTerms {
         public double money_percentage;
-
+        public boolean pay_reparations;
+        public boolean take_land;
     }
 
 }

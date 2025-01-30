@@ -7,3 +7,5 @@ accessible method net/minecraft/client/gui/screens/MenuScreens register (Lnet/mi
 accessible class net/minecraft/client/gui/screens/MenuScreens$ScreenConstructor
 
 extendable class net/minecraft/world/level/block/entity/BlockEntityType$BlockEntitySupplier
+
+accessible field net/minecraft/world/inventory/AnvilMenu itemName Ljava/lang/String;

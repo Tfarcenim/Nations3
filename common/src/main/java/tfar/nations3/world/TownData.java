@@ -24,7 +24,7 @@ public class TownData extends SavedData {
 
     final ServerLevel level;
     final List<War> activeWars = new ArrayList<>();
-    final List<CompletedWar> completedWars = new ArrayList<>();
+    final Set<CompletedWar> completedWars = new HashSet<>();
 
     public TownData(ServerLevel level) {
         this.level = level;
@@ -54,6 +54,22 @@ public class TownData extends SavedData {
         towns.add(town);
         towns_by_name.put(town.getName(),town);
         return town;
+    }
+
+    public CompletedWar findValidWar(ServerPlayer player) {
+        Nation nation = getNationByPlayer(player.getUUID());
+        if (nation == null) {
+            return null;
+        }
+        if (!nation.isOwner(player.getUUID())) {
+            return null;
+        }
+        for (CompletedWar completedWar : completedWars) {
+            if (completedWar.winner() == nation) {
+                return completedWar;
+            }
+        }
+        return null;
     }
 
     public void clearAllClaims(Town town) {
@@ -88,11 +104,15 @@ public class TownData extends SavedData {
         }
         for (War war : activeWars) {
             war.tick();
-            if (war.finished) {
+            if (war.finished && war.hasRewards) {
                 completedWars.add(new CompletedWar(war.getWinner(),war.getLoser()));
             }
         }
         activeWars.removeIf(war -> war.finished);
+    }
+
+    public Set<CompletedWar> getCompletedWars() {
+        return completedWars;
     }
 
     public void payPersonalTaxes() {
@@ -101,9 +121,21 @@ public class TownData extends SavedData {
         }
     }
 
+    public boolean canModifyClaims(UUID uuid) {
+        return canModifyClaims(getNationByPlayer(uuid));
+    }
+
+    public boolean canModifyClaims(Nation nation) {
+        return completedWars.stream().noneMatch(completedWar -> completedWar.loser()== nation);
+    }
+
+    public boolean canModifyClaims(Town town) {
+        return canModifyClaims(getNationByTown(town));
+    }
+
     public void payRent() {
         for (Town town : towns) {
-            Set<ChunkPos> claimed = town.getClaimed();
+            Set<ChunkPos> claimed = town.getDirectClaimed();
             int size = claimed.size();
             if (size > 0) {
                 long rentPayment = size * Services.PLATFORM.getConfig().getRent();
@@ -291,5 +323,21 @@ public class TownData extends SavedData {
         town.load(tag);
         towns.add(town);
         towns_by_name.put(town.getName(),town);
+    }
+
+    public void finalizeWar(CompletedWar completedWar) {
+        CompletedWar.WarTerms warTerms = completedWar.getWarTerms();
+        long take = (long) (completedWar.loser().getMoney() * warTerms.money_percentage);
+        completedWar.loser().addMoney(-take);
+        completedWar.winner().addMoney(take);
+
+        if (warTerms.take_land){
+
+            completedWar.winner().getDirectClaimed().addAll(completedWar.loser().getAllClaimed());
+            completedWar.loser().deepUnclaimAll();
+        }
+
+        completedWars.remove(completedWar);
+
     }
 }

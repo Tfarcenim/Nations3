@@ -15,15 +15,15 @@ public class zinfo {
     //2.5% nation tax paid out of chunk payment of towns in a nation
     //
     //Nation Owners -
-    //Nation can be created by being a town owner of 5+ players. 2.5% tax on all chunks that are now under a nation. Command like “/onbnation create {name}”
+    //Nation can be created by being a town owner of 5+ players. 2.5% tax on all chunks that are now under a nation. Command like "/onbnation create {name}"
     //Must also pay a set fee
     //Can invite other towns into the nation and also accept requests of other towns asking to join
     //
     //Rank System
-    //0-5 players in a town = Town members have the rank of “Villager”, Owner has the rank of “Village Chief”.
-    //5-10 players in a town = Town members have the rank of “Resident”, Owner has the rank of “Mayor”.
-    //10+ players in a town = Town members have the rank of “Citizen”, Owner has the rank “Governor”.
-    //Nation leader has the rank of “President”.
+    //0-5 players in a town = Town members have the rank of “Villager”, Owner has the rank of "Village Chief".
+    //5-10 players in a town = Town members have the rank of “Resident”, Owner has the rank of "Mayor".
+    //10+ players in a town = Town members have the rank of “Citizen”, Owner has the rank "Governor".
+    //Nation leader has the rank of "President".
     //
     //Rebellion System
     //Nation member can create a rebellion with a set fee.

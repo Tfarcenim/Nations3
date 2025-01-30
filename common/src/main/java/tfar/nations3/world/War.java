@@ -23,6 +23,7 @@ public class War {
     int ticksElapsed;
     final Set<ChunkPos> contested;
     boolean finished;
+    boolean hasRewards;
 
     public CustomBossEvent bossEvent;
 
@@ -68,13 +69,14 @@ public class War {
         Nation loser = getLoser();
         Nation winner = getWinner();
         if (winner == attacker) {
-            winner.getClaimed().addAll(contested);
-            loser.deepUnclaim(contested);
-            loser.broadcastMessage(Component.literal("You have lost the battle and contested territory"));
-            winner.broadcastMessage(Component.literal("You have won the battle and contested territory"));
+        //    winner.getClaimed().addAll(contested);
+        //    loser.deepUnclaim(contested);
+            loser.broadcastMessage(Component.literal("You have lost the battle"));
+            winner.broadcastMessage(Component.literal("You have won the battle"));
+            hasRewards = true;
         } else {
-            loser.broadcastMessage(Component.literal("You have lost the battle and gained nothing"));
-            winner.broadcastMessage(Component.literal("You have won the battle and kept territory"));
+            loser.broadcastMessage(Component.literal("You have lost the battle"));
+            winner.broadcastMessage(Component.literal("You have won the battle"));
         }
         bossEvent.removeAllPlayers();
 

@@ -38,7 +38,7 @@ public class Town implements ChunkOwner {
     }
 
     @Override
-    public Set<ChunkPos> getClaimed() {
+    public Set<ChunkPos> getDirectClaimed() {
         return claimed;
     }
 
@@ -199,7 +199,7 @@ public class Town implements ChunkOwner {
         for (Map.Entry<UUID,CitizenInfo> entry : this.citizens.entrySet()) {
             list.add(Component.literal("Citizen: " + Services.PLATFORM.getLastKnownUserName(entry.getKey())+" | Money: "+entry.getValue().money));
         }
-        list.add(Component.literal("Chunks claimed: " + this.getClaimed().size()));
+        list.add(Component.literal("Chunks claimed: " + this.getDirectClaimed().size()));
         list.add(Component.literal((getFractionOnline() * 100)+"% online"));
         return list;
     }

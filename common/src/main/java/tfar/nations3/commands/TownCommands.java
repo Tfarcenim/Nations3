@@ -11,12 +11,10 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.commands.arguments.GameProfileArgument;
-import net.minecraft.network.chat.ClickEvent;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.HoverEvent;
-import net.minecraft.network.chat.Style;
+import net.minecraft.network.chat.*;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.scores.PlayerTeam;
 import tfar.nations3.TextComponents;
 import tfar.nations3.platform.Services;
 import tfar.nations3.world.*;
@@ -61,6 +59,9 @@ public class TownCommands {
                 )
                 .then(Commands.literal("leave")
                         .executes(TownCommands::leaveTown)
+                )
+                .then(Commands.literal("list")
+                        .executes(TownCommands::listTowns)
                 )
                 .then(Commands.literal("clear_claims")
                         .executes(TownCommands::removeAllOwnClaims)
@@ -441,6 +442,26 @@ public class TownCommands {
             }
         }
         commandSourceStack.sendFailure(TextComponents.NOT_IN_TOWN);
+        return 0;
+    }
+
+    public static int listTowns(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+        CommandSourceStack pSource = ctx.getSource();
+        TownData townData = TownData.getInstance(pSource.getLevel());
+        if (townData != null) {
+            Collection<Town> collection = townData.getTowns();
+            if (collection.isEmpty()) {
+                pSource.sendSuccess(() -> Component.literal("There are no towns"), false);
+            } else {
+                pSource.sendSuccess(() -> {
+                    return Component.literal("There are "+collection.size() +" towns: ")
+                            .append(ComponentUtils.formatList(collection, town -> Component.literal(town.getName())));
+                }, false);
+            }
+
+            return collection.size();
+        }
+        pSource.sendFailure(Component.literal("There are no towns"));
         return 0;
     }
 

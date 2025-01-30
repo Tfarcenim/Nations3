@@ -115,7 +115,7 @@ public class ClaimingTableMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        return stillValid(this.access, player, ModBlocks.CLAIMING_TABLE);
+        return stillValid(this.access, player, ModBlocks.CLAIMING_TABLE) && townData.canModifyClaims(player.getUUID());
     }
 
     public ContainerLevelAccess getAccess() {

@@ -37,7 +37,7 @@ public class Rebellion {
             }
 
             Set<ChunkPos> contested = new HashSet<>();
-            members.forEach(town -> contested.addAll(town.getClaimed()));
+            members.forEach(town -> contested.addAll(town.getDirectClaimed()));
 
             townData.addWar(nation,newNation,contested);
         }

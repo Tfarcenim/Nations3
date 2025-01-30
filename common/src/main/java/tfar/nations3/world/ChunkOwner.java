@@ -9,19 +9,19 @@ import java.util.Set;
 import java.util.UUID;
 
 public interface ChunkOwner {
-    Set<ChunkPos> getClaimed();
+    Set<ChunkPos> getDirectClaimed();
     default boolean hasClaim(ChunkPos pos) {
-        return getClaimed().contains(pos);
+        return getDirectClaimed().contains(pos);
     }
 
     default boolean claim(ChunkPos pos) {
-        boolean add = getClaimed().add(pos);
+        boolean add = getDirectClaimed().add(pos);
         if (add) setDirty();
         return add;
     }
 
     default boolean unClaim(ChunkPos pos) {
-        boolean remove = getClaimed().remove(pos);
+        boolean remove = getDirectClaimed().remove(pos);
         if (remove) setDirty();
         return remove;
     }
@@ -34,6 +34,9 @@ public interface ChunkOwner {
 
     void setMoney(long money);
     long getMoney();
+    default void addMoney(long money) {
+        setMoney(getMoney() + money);
+    }
     boolean containsCitizen(UUID uuid);
     Set<UUID> getAllCitizens();
 
